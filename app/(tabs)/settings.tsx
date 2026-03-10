@@ -206,6 +206,43 @@ export default function SettingsScreen() {
             onPress={() =>
               Linking.openURL("https://github.com/zmrlft/GreenWall")
             }
+            leftIcon={
+              <MaterialIcons
+                name="code"
+                size={24}
+                color={colors.muted}
+              />
+            }
+          />
+          <MDivider style={{ marginHorizontal: 0 }} />
+          <MListItem
+            title={language === "zh" ? "我的仓库" : "My Repository"}
+            rightText="xiaoluoshen/GreenWall-Mobile"
+            onPress={() =>
+              Linking.openURL("https://github.com/xiaoluoshen/GreenWall-Mobile")
+            }
+            leftIcon={
+              <MaterialIcons
+                name="folder"
+                size={24}
+                color={colors.muted}
+              />
+            }
+          />
+          <MDivider style={{ marginHorizontal: 0 }} />
+          <MListItem
+            title="Telegram"
+            rightText="@lsposed0"
+            onPress={() =>
+              Linking.openURL("https://t.me/lsposed0")
+            }
+            leftIcon={
+              <MaterialIcons
+                name="send"
+                size={24}
+                color={colors.muted}
+              />
+            }
           />
           <MDivider style={{ marginHorizontal: 0 }} />
           <MListItem
