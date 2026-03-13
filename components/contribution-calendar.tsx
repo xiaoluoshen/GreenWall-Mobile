@@ -20,15 +20,12 @@ import {
   type ContributionMap,
   type ContributionLevel,
 } from "@/lib/contribution-store";
+import { useI18n } from "@/lib/i18n";
 
 const CELL_SIZE = 13;
 const CELL_GAP = 3;
 const CELL_TOTAL = CELL_SIZE + CELL_GAP;
-const MONTH_LABELS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-const DAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
+// Removed static labels to use i18n from props or context
 
 interface ContributionCalendarProps {
   year: number;
@@ -87,6 +84,7 @@ export function ContributionCalendar({
 
   const dayLabelWidth = 28;
   const calendarWidth = (maxWeek + 1) * CELL_TOTAL + dayLabelWidth;
+  const { t } = useI18n();
 
   const getCellAtPosition = useCallback(
     (x: number, y: number) => {
@@ -153,22 +151,22 @@ export function ContributionCalendar({
         {/* Month labels */}
         <View style={[styles.monthRow, { marginLeft: dayLabelWidth }]}>
           {monthPositions.map(({ month, x }) => (
-            <Text
-              key={`month-${month}`}
-              style={[
-                styles.monthLabel,
-                { color: colors.muted, left: x },
-              ]}
-            >
-              {MONTH_LABELS[month]}
-            </Text>
+              <Text
+                key={`month-${month}`}
+                style={[
+                  styles.monthLabel,
+                  { color: colors.muted, left: x },
+                ]}
+              >
+                {t.calendar.months[month]}
+              </Text>
           ))}
         </View>
 
         <View style={{ flexDirection: "row" }}>
           {/* Day labels */}
           <View style={{ width: dayLabelWidth, marginTop: 2 }}>
-            {DAY_LABELS.map((label, i) => (
+            {t.calendar.weeks.map((label, i) => (
               <View
                 key={`day-${i}`}
                 style={{
@@ -244,12 +242,13 @@ export function ContributionLegend() {
   const colors = useColors();
   const colorScheme = useColorScheme() ?? "light";
   const scheme = colorScheme === "dark" ? "dark" : "light";
+  const { t } = useI18n();
 
   const levels = [0, 1, 3, 6, 9];
 
   return (
     <View style={styles.legendContainer}>
-      <Text style={[styles.legendText, { color: colors.muted }]}>Less</Text>
+      <Text style={[styles.legendText, { color: colors.muted }]}>{t.canvas.legendLess}</Text>
       {levels.map((level) => (
         <View
           key={level}
@@ -259,7 +258,7 @@ export function ContributionLegend() {
           ]}
         />
       ))}
-      <Text style={[styles.legendText, { color: colors.muted }]}>More</Text>
+      <Text style={[styles.legendText, { color: colors.muted }]}>{t.canvas.legendMore}</Text>
     </View>
   );
 }

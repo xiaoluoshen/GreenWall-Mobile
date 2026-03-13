@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Localization from "expo-localization";
 
 export type Language = "en" | "zh";
 
@@ -269,7 +270,15 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((val) => {
       if (val === "zh" || val === "en") {
-        setLanguageState(val);
+        setLanguageState(val as Language);
+      } else {
+        // Auto-detect system language
+        const locale = Localization.getLocales()[0]?.languageCode;
+        if (locale === "zh") {
+          setLanguageState("zh");
+        } else {
+          setLanguageState("en");
+        }
       }
       setLoaded(true);
     });

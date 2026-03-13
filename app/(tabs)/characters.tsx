@@ -54,12 +54,12 @@ export default function CharactersScreen() {
   const patterns = ALL_PATTERNS[category];
   const charKeys = useMemo(() => Object.keys(patterns), [category]);
 
-  const categoryLabels = [
+  const categoryLabels = useMemo(() => [
     t.characters.uppercase,
     t.characters.lowercase,
     t.characters.numbers,
     t.characters.symbols,
-  ];
+  ], [t]);
 
   const selectedPattern = selectedChar ? patterns[selectedChar] : null;
 
