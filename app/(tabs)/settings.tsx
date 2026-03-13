@@ -196,7 +196,7 @@ export default function SettingsScreen() {
         <MCard style={{ padding: 0 }}>
           <MListItem
             title={t.settings.version}
-            rightText="1.0.0"
+            rightText="1.1.1"
             showArrow={false}
           />
           <MDivider style={{ marginHorizontal: 0 }} />
