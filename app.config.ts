@@ -20,7 +20,7 @@ const bundleId =
       // Prefix with 'x' if segment starts with a digit
       return /^[a-zA-Z]/.test(segment) ? segment : "x" + segment;
     })
-    .join("."} || "com.xiaoluoshen.greenwall.mobile";
+    .join(".") || "com.xiaoluoshen.greenwall.mobile";
 // Extract timestamp from bundle ID and prefix with "manus" for deep link scheme
 // e.g., "space.manus.my.app.t20240115103045" -> "manus20240115103045"
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
