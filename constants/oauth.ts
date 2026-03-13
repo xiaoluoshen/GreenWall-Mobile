@@ -3,9 +3,9 @@ import * as ReactNative from "react-native";
 
 // Extract scheme from bundle ID (last segment timestamp, prefixed with "manus")
 // e.g., "space.manus.my.app.t20240115103045" -> "manus20240115103045"
-const bundleId = "space.manus.GreenWall.Mobile.t20260310133222";
+const bundleId = "com.xiaoluoshen.greenwall.mobile";
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
-const schemeFromBundleId = `manus${timestamp}`;
+const schemeFromBundleId = "greenwall";
 
 const env = {
   portal: process.env.EXPO_PUBLIC_OAUTH_PORTAL_URL ?? "",
@@ -50,7 +50,7 @@ export function getApiBaseUrl(): string {
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";
-export const USER_INFO_KEY = "manus-runtime-user-info";
+export const USER_INFO_KEY = "greenwall-user-info";
 
 const encodeState = (value: string) => {
   if (typeof globalThis.btoa === "function") {
