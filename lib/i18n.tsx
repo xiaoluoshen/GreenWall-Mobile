@@ -51,6 +51,11 @@ type Translations = {
     loginError: string;
     loggedInAs: string;
     notLoggedIn: string;
+    showToken: string;
+    hideToken: string;
+    sourceCode: string;
+    myRepos: string;
+    aboutSubtitle: string;
   };
   repo: {
     title: string;
@@ -74,6 +79,10 @@ type Translations = {
     loading: string;
     error: string;
     success: string;
+  };
+  calendar: {
+    months: string[];
+    weeks: string[];
   };
 };
 
@@ -123,6 +132,11 @@ const en: Translations = {
     loginError: "Login failed. Please check your token.",
     loggedInAs: "Logged in as",
     notLoggedIn: "Not logged in",
+    showToken: "Show Token",
+    hideToken: "Hide Token",
+    sourceCode: "Source Code",
+    myRepos: "My Repositories",
+    aboutSubtitle: "Based on GreenWall by zmrlft",
   },
   repo: {
     title: "Create Remote Repository",
@@ -146,6 +160,10 @@ const en: Translations = {
     loading: "Loading...",
     error: "Error",
     success: "Success",
+  },
+  calendar: {
+    months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    weeks: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
   },
 };
 
@@ -189,12 +207,17 @@ const zh: Translations = {
     remember: "记住令牌",
     language: "语言",
     year: "年份",
-    about: "关于",
+    about: "关于项目",
     version: "版本",
     loginSuccess: "登录成功",
     loginError: "登录失败，请检查令牌是否正确",
     loggedInAs: "已登录为",
     notLoggedIn: "未登录",
+    showToken: "显示 Token",
+    hideToken: "隐藏 Token",
+    sourceCode: "源代码",
+    myRepos: "我的仓库",
+    aboutSubtitle: "基于 zmrlft 的 GreenWall",
   },
   repo: {
     title: "创建远程仓库",
@@ -219,6 +242,10 @@ const zh: Translations = {
     error: "错误",
     success: "成功",
   },
+  calendar: {
+    months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+    weeks: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
+  },
 };
 
 const translations: Record<Language, Translations> = { en, zh };
@@ -230,13 +257,13 @@ type I18nContextType = {
 };
 
 const I18nContext = createContext<I18nContextType>({
-  language: "en",
+  language: "zh",
   setLanguage: () => {},
-  t: en,
+  t: zh,
 });
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("en");
+  const [language, setLanguageState] = useState<Language>("zh");
   const [loaded, setLoaded] = useState(false);
 
   React.useEffect(() => {

@@ -8,6 +8,7 @@ export interface GitHubUser {
   login: string;
   avatar_url: string;
   name: string | null;
+  email?: string | null;
 }
 
 export interface CreateRepoOptions {
@@ -66,13 +67,34 @@ export async function getSavedUser(): Promise<GitHubUser | null> {
   return null;
 }
 
+/**
+ * 获取用户的主邮箱（用于贡献提交，确保贡献能刷到账号）
+ */
+async function getUserPrimaryEmail(token: string, login: string): Promise<string> {
+  try {
+    const res = await githubFetch("/user/emails", token);
+    if (res.ok) {
+      const emails: Array<{ email: string; primary: boolean; verified: boolean }> = await res.json();
+      const primary = emails.find((e) => e.primary && e.verified);
+      if (primary) return primary.email;
+      const verified = emails.find((e) => e.verified);
+      if (verified) return verified.email;
+    }
+  } catch {
+    // Ignore error
+  }
+  return `${login}@users.noreply.github.com`;
+}
+
 export async function validateToken(token: string): Promise<GitHubUser | null> {
   try {
     const res = await githubFetch("/user", token);
     if (res.ok) {
       const user: GitHubUser = await res.json();
-      await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
-      return user;
+      const email = await getUserPrimaryEmail(token, user.login);
+      const userWithEmail: GitHubUser = { ...user, email };
+      await AsyncStorage.setItem(USER_KEY, JSON.stringify(userWithEmail));
+      return userWithEmail;
     }
     return null;
   } catch {
@@ -118,7 +140,10 @@ export async function pushContributions(
   onProgress?: (current: number, total: number) => void
 ): Promise<{ success: boolean; message: string }> {
   try {
-    // Sort contributions by date
+    const email = await getUserPrimaryEmail(token, owner);
+    const savedUser = await getSavedUser();
+    const authorName = savedUser?.name || savedUser?.login || owner;
+
     const sorted = [...contributions].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
@@ -128,17 +153,15 @@ export async function pushContributions(
 
     for (const contrib of sorted) {
       for (let i = 0; i < contrib.count; i++) {
-        // Create a file with unique content for each commit
-        const timestamp = new Date(contrib.date);
-        timestamp.setHours(12, 0, 0, 0);
-        timestamp.setMinutes(i);
+        const timestamp = new Date(contrib.date + "T12:00:00");
+        timestamp.setMinutes(i % 60);
+        timestamp.setSeconds(Math.floor(i / 60));
 
         const filePath = `contributions/${contrib.date}_${i}.txt`;
         const content = btoa(
-          `GreenWall contribution: ${contrib.date} #${i + 1}\nGenerated at: ${new Date().toISOString()}`
+          `GreenWall contribution\nDate: ${contrib.date}\nIndex: ${i + 1}\nGenerated: ${new Date().toISOString()}`
         );
 
-        // Create or update file via GitHub API
         const res = await githubFetch(
           `/repos/${owner}/${repo}/contents/${filePath}`,
           token,
@@ -148,13 +171,13 @@ export async function pushContributions(
               message: `contribution: ${contrib.date}`,
               content,
               committer: {
-                name: "GreenWall",
-                email: "greenwall@users.noreply.github.com",
+                name: authorName,
+                email: email,
                 date: timestamp.toISOString(),
               },
               author: {
-                name: "GreenWall",
-                email: "greenwall@users.noreply.github.com",
+                name: authorName,
+                email: email,
                 date: timestamp.toISOString(),
               },
             }),
@@ -165,7 +188,7 @@ export async function pushContributions(
           const error = await res.json();
           return {
             success: false,
-            message: `Failed at ${contrib.date}: ${error.message || res.status}`,
+            message: `Push failed ${contrib.date}: ${error.message || res.status}`,
           };
         }
 
