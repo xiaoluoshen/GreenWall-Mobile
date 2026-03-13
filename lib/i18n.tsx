@@ -268,20 +268,28 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [loaded, setLoaded] = useState(false);
 
   React.useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((val) => {
-      if (val === "zh" || val === "en") {
-        setLanguageState(val as Language);
-      } else {
-        // Auto-detect system language
-        const locale = Localization.getLocales()[0]?.languageCode;
-        if (locale === "zh") {
-          setLanguageState("zh");
+    const loadLanguage = async () => {
+      try {
+        const val = await AsyncStorage.getItem(STORAGE_KEY);
+        if (val === "zh" || val === "en") {
+          setLanguageState(val as Language);
         } else {
-          setLanguageState("en");
+          // Auto-detect system language
+          const locales = Localization.getLocales();
+          const locale = locales[0]?.languageCode;
+          if (locale === "zh") {
+            setLanguageState("zh");
+          } else {
+            setLanguageState("en");
+          }
         }
+      } catch (e) {
+        console.error("Failed to load language", e);
+      } finally {
+        setLoaded(true);
       }
-      setLoaded(true);
-    });
+    };
+    loadLanguage();
   }, []);
 
   const setLanguage = useCallback((lang: Language) => {

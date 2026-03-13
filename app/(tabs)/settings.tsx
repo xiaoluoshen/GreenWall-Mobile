@@ -156,7 +156,7 @@ export default function SettingsScreen() {
                 />
                 <View style={styles.tokenActions}>
                   <MButton
-                    title={showToken ? "Hide" : "Show"}
+                    title={showToken ? t.settings.hideToken : t.settings.showToken}
                     variant="text"
                     compact
                     onPress={() => setShowToken(!showToken)}
@@ -216,7 +216,7 @@ export default function SettingsScreen() {
           />
           <MDivider style={{ marginHorizontal: 0 }} />
           <MListItem
-            title={language === "zh" ? "我的仓库" : "My Repository"}
+            title={t.settings.myRepos}
             rightText="xiaoluoshen/GreenWall-Mobile"
             onPress={() =>
               Linking.openURL("https://github.com/xiaoluoshen/GreenWall-Mobile")
