@@ -1,0 +1,48 @@
+name: Build Android APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🏗 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗 Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 🏗 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: 🏗 Install dependencies
+        run: pnpm install
+
+      - name: 🏗 Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🏗 Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 🏗 Build Android APK
+        run: |
+          npx expo prebuild --platform android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: 🏗 Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GreenWall-APK
+          path: android/app/build/outputs/apk/release/*.apk
