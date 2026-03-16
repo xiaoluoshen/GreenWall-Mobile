@@ -22,7 +22,7 @@ import {
 } from "@/lib/contribution-store";
 import { useI18n } from "@/lib/i18n";
 
-const CELL_SIZE = 13;
+const CELL_SIZE = 14;
 const CELL_GAP = 3;
 const CELL_TOTAL = CELL_SIZE + CELL_GAP;
 // Removed static labels to use i18n from props or context
@@ -265,19 +265,21 @@ export function ContributionLegend() {
 
 const styles = StyleSheet.create({
   monthRow: {
-    height: 18,
+    height: 20,
     position: "relative",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   monthLabel: {
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: "500",
     position: "absolute",
-    top: 0,
+    top: 2,
   },
   dayLabel: {
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: "500",
     textAlign: "right",
-    paddingRight: 4,
+    paddingRight: 6,
   },
   weekColumn: {
     position: "absolute",
@@ -286,23 +288,25 @@ const styles = StyleSheet.create({
   cell: {
     width: CELL_SIZE,
     height: CELL_SIZE,
-    borderRadius: 2,
+    borderRadius: 3,
     position: "absolute",
   },
   legendContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    paddingVertical: 8,
+    gap: 6,
+    paddingVertical: 12,
+    marginTop: 8,
   },
   legendCell: {
-    width: 12,
-    height: 12,
-    borderRadius: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 3,
   },
   legendText: {
-    fontSize: 11,
-    marginHorizontal: 4,
+    fontSize: 12,
+    fontWeight: "500",
+    marginHorizontal: 6,
   },
 });

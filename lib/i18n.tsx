@@ -138,6 +138,9 @@ const en: Translations = {
     sourceCode: "Source Code",
     myRepos: "My Repositories",
     aboutSubtitle: "Based on GreenWall by zmrlft",
+    github: "GitHub",
+    telegram: "Telegram",
+    greenWallMobile: "GreenWall Mobile",
   },
   repo: {
     title: "Create Remote Repository",
@@ -161,6 +164,8 @@ const en: Translations = {
     loading: "Loading...",
     error: "Error",
     success: "Success",
+    retry: "Retry",
+    close: "Close",
   },
   calendar: {
     months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
@@ -219,6 +224,9 @@ const zh: Translations = {
     sourceCode: "源代码",
     myRepos: "我的仓库",
     aboutSubtitle: "基于 zmrlft 的 GreenWall",
+    github: "GitHub",
+    telegram: "Telegram",
+    greenWallMobile: "GreenWall Mobile",
   },
   repo: {
     title: "创建远程仓库",
@@ -242,6 +250,8 @@ const zh: Translations = {
     loading: "加载中...",
     error: "错误",
     success: "成功",
+    retry: "重试",
+    close: "关闭",
   },
   calendar: {
     months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],

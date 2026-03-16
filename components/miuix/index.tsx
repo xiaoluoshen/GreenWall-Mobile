@@ -29,7 +29,7 @@ export function MCard({
           borderRadius: 16,
           padding: 16,
           marginHorizontal: 16,
-          marginVertical: 6,
+          marginVertical: 8,
         },
         style,
       ]}
@@ -52,14 +52,14 @@ export function MSectionLabel({
     <Text
       style={[
         {
-          fontSize: 13,
-          fontWeight: "500",
+          fontSize: 14,
+          fontWeight: "600",
           color: colors.muted,
           marginLeft: 32,
-          marginTop: 20,
-          marginBottom: 6,
+          marginTop: 24,
+          marginBottom: 8,
           textTransform: "uppercase",
-          letterSpacing: 0.5,
+          letterSpacing: 0.8,
         },
         style,
       ]}
@@ -82,11 +82,11 @@ export function MLargeTitle({
     <Text
       style={[
         {
-          fontSize: 30,
+          fontSize: 32,
           fontWeight: "700",
           color: colors.foreground,
           marginLeft: 20,
-          marginBottom: 8,
+          marginBottom: 12,
         },
         style,
       ]}
@@ -200,7 +200,7 @@ export function MButton({
     >
       <Text
         style={{
-          fontSize: compact ? 14 : 16,
+          fontSize: compact ? 15 : 17,
           fontWeight: "600",
           color: textColor,
         }}
@@ -243,8 +243,8 @@ export function MSegmentedControl({
           activeOpacity={0.7}
           style={{
             flex: 1,
-            paddingVertical: 8,
-            paddingHorizontal: 12,
+            paddingVertical: 10,
+            paddingHorizontal: 14,
             borderRadius: 10,
             alignItems: "center",
             backgroundColor:
@@ -253,8 +253,8 @@ export function MSegmentedControl({
         >
           <Text
             style={{
-              fontSize: 14,
-              fontWeight: index === selectedIndex ? "600" : "400",
+              fontSize: 15,
+              fontWeight: index === selectedIndex ? "600" : "500",
               color:
                 index === selectedIndex ? colors.foreground : colors.muted,
             }}
@@ -321,26 +321,28 @@ const styles = StyleSheet.create({
   listItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    minHeight: 48,
+    minHeight: 52,
   },
   listItemIcon: {
-    marginRight: 12,
+    marginRight: 14,
     width: 24,
     alignItems: "center",
   },
   listItemTitle: {
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: 17,
+    fontWeight: "500",
   },
   listItemSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: 14,
+    marginTop: 4,
+    fontWeight: "400",
   },
   listItemRight: {
-    fontSize: 14,
-    marginRight: 4,
+    fontSize: 15,
+    marginRight: 6,
+    fontWeight: "400",
   },
   listItemArrow: {
     fontSize: 16,
@@ -348,19 +350,19 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   switchTrack: {
-    width: 48,
-    height: 28,
-    borderRadius: 14,
+    width: 52,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
   },
   switchThumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
 });

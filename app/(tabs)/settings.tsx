@@ -196,12 +196,12 @@ export default function SettingsScreen() {
         <MCard style={{ padding: 0 }}>
           <MListItem
             title={t.settings.version}
-            rightText="1.1.1"
+            rightText="1.2.0"
             showArrow={false}
           />
           <MDivider style={{ marginHorizontal: 0 }} />
           <MListItem
-            title="GitHub"
+            title={t.settings.github}
             rightText="zmrlft/GreenWall"
             onPress={() =>
               Linking.openURL("https://github.com/zmrlft/GreenWall")
@@ -231,7 +231,7 @@ export default function SettingsScreen() {
           />
           <MDivider style={{ marginHorizontal: 0 }} />
           <MListItem
-            title="Telegram"
+            title={t.settings.telegram}
             rightText="@lsposed0"
             onPress={() =>
               Linking.openURL("https://t.me/lsposed0")
@@ -246,8 +246,8 @@ export default function SettingsScreen() {
           />
           <MDivider style={{ marginHorizontal: 0 }} />
           <MListItem
-            title="GreenWall Mobile"
-            subtitle="Based on GreenWall by zmrlft"
+            title={t.settings.greenWallMobile}
+            subtitle={t.settings.aboutSubtitle}
             showArrow={false}
             leftIcon={
               <MaterialIcons

@@ -75,14 +75,19 @@ async function getUserPrimaryEmail(token: string, login: string): Promise<string
     const res = await githubFetch("/user/emails", token);
     if (res.ok) {
       const emails: Array<{ email: string; primary: boolean; verified: boolean }> = await res.json();
-      const primary = emails.find((e) => e.primary && e.verified);
+      // 优先获取主邮箱
+      const primary = emails.find((e) => e.primary);
       if (primary) return primary.email;
+      // 其次获取已验证的邮箱
       const verified = emails.find((e) => e.verified);
       if (verified) return verified.email;
+      // 最后获取任何邮箱
+      if (emails.length > 0) return emails[0].email;
     }
-  } catch {
-    // Ignore error
+  } catch (error) {
+    console.warn("Failed to fetch user emails:", error);
   }
+  // 降级方案：使用 GitHub 的 noreply 邮箱
   return `${login}@users.noreply.github.com`;
 }
 
@@ -153,13 +158,16 @@ export async function pushContributions(
 
     for (const contrib of sorted) {
       for (let i = 0; i < contrib.count; i++) {
-        const timestamp = new Date(contrib.date + "T12:00:00");
-        timestamp.setMinutes(i % 60);
-        timestamp.setSeconds(Math.floor(i / 60));
+        // 生成精确的时间戳：每个贡献在该日期的不同时间
+        // 这样可以确保 GitHub 正确识别贡献
+        const baseDate = new Date(contrib.date + "T00:00:00Z");
+        const timestamp = new Date(baseDate);
+        // 分散时间：第一个在 00:00，之后每个间隔 1 分钟
+        timestamp.setUTCHours(0, i % 60, Math.floor(i / 60), 0);
 
-        const filePath = `contributions/${contrib.date}_${i}.txt`;
+        const filePath = `contributions/${contrib.date}/${String(i).padStart(4, "0")}.txt`;
         const content = btoa(
-          `GreenWall contribution\nDate: ${contrib.date}\nIndex: ${i + 1}\nGenerated: ${new Date().toISOString()}`
+          `GreenWall Contribution\nDate: ${contrib.date}\nIndex: ${i + 1}/${contrib.count}\nGenerated: ${new Date().toISOString()}\nAuthor: ${authorName}`
         );
 
         const res = await githubFetch(
@@ -168,7 +176,7 @@ export async function pushContributions(
           {
             method: "PUT",
             body: JSON.stringify({
-              message: `contribution: ${contrib.date}`,
+              message: `chore: contribution on ${contrib.date} (${i + 1}/${contrib.count})`,
               content,
               committer: {
                 name: authorName,
@@ -186,19 +194,24 @@ export async function pushContributions(
 
         if (!res.ok) {
           const error = await res.json();
+          console.error(`Failed to push contribution for ${contrib.date}:`, error);
           return {
             success: false,
-            message: `Push failed ${contrib.date}: ${error.message || res.status}`,
+            message: `Push failed on ${contrib.date}: ${error.message || `HTTP ${res.status}`}`,
           };
         }
 
         current++;
         onProgress?.(current, total);
+        
+        // 添加小延迟以避免 API 限流
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
 
     return { success: true, message: "All contributions pushed successfully" };
   } catch (e: any) {
+    console.error("Push contributions error:", e);
     return { success: false, message: e.message || "Network error" };
   }
 }
