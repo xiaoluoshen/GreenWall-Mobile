@@ -166,21 +166,27 @@ export function ContributionCalendar({
         <View style={{ flexDirection: "row" }}>
           {/* Day labels */}
           <View style={{ width: dayLabelWidth, marginTop: 2 }}>
-            {t.calendar.weeks.map((label, i) => (
-              <View
-                key={`day-${i}`}
-                style={{
-                  height: CELL_TOTAL,
-                  justifyContent: "center",
-                }}
-              >
-                <Text
-                  style={[styles.dayLabel, { color: colors.muted }]}
+            {t.calendar.weeks.map((label, i) => {
+              // Only show Mon, Wed, Fri to match GitHub style and save space
+              const shouldShow = i === 1 || i === 3 || i === 5;
+              return (
+                <View
+                  key={`day-${i}`}
+                  style={{
+                    height: CELL_TOTAL,
+                    justifyContent: "center",
+                  }}
                 >
-                  {label}
-                </Text>
-              </View>
-            ))}
+                  {shouldShow && (
+                    <Text
+                      style={[styles.dayLabel, { color: colors.muted }]}
+                    >
+                      {label}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
           </View>
 
           {/* Grid */}
