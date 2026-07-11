@@ -29,7 +29,6 @@
 
 GreenWall Mobile 是 [GreenWall](https://github.com/zmrlft/GreenWall) 的移动端版本，基于 React Native（Expo）开发。它可以让你在手机上自由地在 GitHub 贡献热力图上绘画，然后通过 GitHub API 一键同步到你的 GitHub 账号，打造个性化的贡献墙。
 
-**v1.2.0 更新**：修复了贡献刷新问题，优化了时间戳处理，完成了全面汉化，改进了 UI 排版。
 
 UI 设计参考了 [MIUIX](https://github.com/compose-miuix-ui/miuix) 风格，大圆角卡片搭配简洁列表布局，支持深色 / 浅色主题自动切换。
 
@@ -49,10 +48,6 @@ UI 设计参考了 [MIUIX](https://github.com/compose-miuix-ui/miuix) 风格，�
 | **深色模式** | 自动适配系统深色 / 浅色主题 |
 | **本地存储** | 绘制数据和设置自动保存到本地 |
 | **贡献刷新修复** | 改进了时间戳处理和邮箱获取逻辑，确保贡献能正确显示 |
-
-## 下载安装
-
-前往 [Releases](https://github.com/xiaoluoshen/GreenWall-Mobile/releases/latest) 页面下载最新版 APK 安装包。
 
 ## 使用说明
 
@@ -87,24 +82,7 @@ UI 设计参考了 [MIUIX](https://github.com/compose-miuix-ui/miuix) 风格，�
 | NativeWind (Tailwind CSS) | 4.x |
 | Expo Router | 6 |
 
-## 从源码构建
 
-```bash
-# 克隆仓库
-git clone https://github.com/xiaoluoshen/GreenWall-Mobile.git
-cd GreenWall-Mobile
-
-# 安装依赖
-pnpm install
-
-# 启动开发服务器
-pnpm dev
-
-# 构建 Android APK
-npx expo prebuild --platform android
-cd android
-./gradlew assembleRelease
-```
 
 ## 项目结构
 
@@ -132,7 +110,6 @@ lib/
 ## 联系
 
 - Telegram 频道：[@lsposed0](https://t.me/lsposed0)
-- GitHub Issues：[提交反馈](https://github.com/xiaoluoshen/GreenWall-Mobile/issues)
 
 ## 许可证
 
