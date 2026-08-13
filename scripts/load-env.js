@@ -1,7 +1,7 @@
 /**
  * Custom environment loader that prioritizes system environment variables
- * over .env file values. This ensures that Manus platform-injected variables
- * are not overridden by placeholder values in .env
+ * over .env file values, preventing placeholder values in .env from
+ * overriding deployment-provided configuration.
  */
 import fs from "fs";
 import path from "path";

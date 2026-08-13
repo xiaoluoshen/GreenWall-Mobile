@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  Platform,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
@@ -25,7 +24,6 @@ import {
   MButton,
   MSegmentedControl,
   MSwitch,
-  MSectionLabel,
 } from "@/components/miuix";
 import {
   useContributionStore,
@@ -39,8 +37,14 @@ import {
   getSavedUser,
   createRepository,
   pushContributions,
-  type GitHubUser,
 } from "@/lib/github-api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "expo-router";
+import {
+  createPatternStamp,
+  parsePendingPattern,
+  PENDING_PATTERN_KEY,
+} from "@/lib/pattern-stamp";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR - i);
@@ -56,7 +60,20 @@ export default function CanvasScreen() {
   const [tool, setTool] = useState<"pen" | "eraser">("pen");
   const [intensity, setIntensity] = useState<ContributionLevel>(9);
 
-  const store = useContributionStore(year);
+  const {
+    contributions,
+    loaded,
+    load,
+    setCell,
+    commitBatch,
+    allGreen,
+    reset,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    totalContributions,
+  } = useContributionStore(year);
 
   // Create Repo modal state
   const [showRepoModal, setShowRepoModal] = useState(false);
@@ -65,30 +82,68 @@ export default function CanvasScreen() {
   const [repoPrivate, setRepoPrivate] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const processedPatternRef = useRef<string | null>(null);
 
   useEffect(() => {
-    store.load();
-  }, [year]);
+    void load();
+  }, [load]);
 
   const days = useMemo(() => getYearDays(year), [year]);
 
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      const applyPendingPattern = async () => {
+        if (!loaded) return;
+
+        const serializedPattern = await AsyncStorage.getItem(PENDING_PATTERN_KEY);
+        if (!active) return;
+        if (!serializedPattern) {
+          processedPatternRef.current = null;
+          return;
+        }
+        if (processedPatternRef.current === serializedPattern) return;
+
+        const pendingPattern = parsePendingPattern(serializedPattern);
+        if (!pendingPattern) {
+          processedPatternRef.current = serializedPattern;
+          await AsyncStorage.removeItem(PENDING_PATTERN_KEY);
+          return;
+        }
+
+        const cells = createPatternStamp(days, pendingPattern.pattern);
+        if (Object.keys(cells).length === 0) return;
+
+        processedPatternRef.current = serializedPattern;
+        commitBatch(cells);
+        await AsyncStorage.removeItem(PENDING_PATTERN_KEY);
+      };
+
+      void applyPendingPattern();
+      return () => {
+        active = false;
+      };
+    }, [days, commitBatch, loaded]),
+  );
+
   const handleCellChange = useCallback(
     (date: string, count: number) => {
-      store.setCell(date, count);
+      setCell(date, count);
     },
-    [store]
+    [setCell],
   );
 
   const handleBatchEnd = useCallback(
     (cells: Record<string, number>) => {
-      store.commitBatch(cells);
+      commitBatch(cells);
     },
-    [store]
+    [commitBatch],
   );
 
   const handleAllGreen = useCallback(() => {
-    store.allGreen(days, intensity);
-  }, [store, days, intensity]);
+    allGreen(days, intensity);
+  }, [allGreen, days, intensity]);
 
   const handleCreateRepo = useCallback(async () => {
     const token = await getSavedToken();
@@ -96,12 +151,12 @@ export default function CanvasScreen() {
       Alert.alert(t.common.error, t.repo.loginRequired);
       return;
     }
-    if (store.totalContributions === 0) {
+    if (totalContributions === 0) {
       Alert.alert(t.common.error, t.repo.noContributions);
       return;
     }
     setShowRepoModal(true);
-  }, [t, store.totalContributions]);
+  }, [t, totalContributions]);
 
   const handleGenerateAndPush = useCallback(async () => {
     const token = await getSavedToken();
@@ -112,42 +167,45 @@ export default function CanvasScreen() {
     }
 
     setGenerating(true);
+    try {
+      const result = await createRepository(token, {
+        name: repoName,
+        description: repoDesc,
+        isPrivate: repoPrivate,
+      });
 
-    // Create repo
-    const result = await createRepository(token, {
-      name: repoName,
-      description: repoDesc,
-      isPrivate: repoPrivate,
-    });
+      if (!result.success) {
+        Alert.alert(
+          t.common.error,
+          interpolate(t.repo.error, { message: result.message }),
+        );
+        return;
+      }
 
-    if (!result.success) {
+      const commits = Object.entries(contributions)
+        .filter(([_, count]) => count > 0)
+        .map(([date, count]) => ({ date, count }));
+      const pushResult = await pushContributions(
+        token,
+        user.login,
+        repoName,
+        commits,
+        (current, total) => setProgress({ current, total }),
+      );
+
+      if (pushResult.success) {
+        setShowRepoModal(false);
+        Alert.alert(t.common.success, t.repo.success);
+      } else {
+        Alert.alert(t.common.error, pushResult.message);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      Alert.alert(t.common.error, interpolate(t.repo.error, { message }));
+    } finally {
       setGenerating(false);
-      Alert.alert(t.common.error, interpolate(t.repo.error, { message: result.message }));
-      return;
     }
-
-    // Push contributions
-    const commits = Object.entries(store.contributions)
-      .filter(([_, count]) => count > 0)
-      .map(([date, count]) => ({ date, count }));
-
-    const pushResult = await pushContributions(
-      token,
-      user.login,
-      repoName,
-      commits,
-      (current, total) => setProgress({ current, total })
-    );
-
-    setGenerating(false);
-    setShowRepoModal(false);
-
-    if (pushResult.success) {
-      Alert.alert(t.common.success, t.repo.success);
-    } else {
-      Alert.alert(t.common.error, pushResult.message);
-    }
-  }, [repoName, repoDesc, repoPrivate, store.contributions, t]);
+  }, [repoName, repoDesc, repoPrivate, contributions, t]);
 
   return (
     <ScreenContainer>
@@ -196,7 +254,7 @@ export default function CanvasScreen() {
         {/* Contribution Stats */}
         <Text style={[styles.statsText, { color: colors.muted }]}>
           {interpolate(t.canvas.contributions, {
-            count: store.totalContributions,
+            count: totalContributions,
             year,
           })}
         </Text>
@@ -205,7 +263,7 @@ export default function CanvasScreen() {
         <MCard style={{ padding: 12, overflow: "hidden" }}>
           <ContributionCalendar
             year={year}
-            contributions={store.contributions}
+            contributions={contributions}
             tool={tool}
             intensity={intensity}
             onCellChange={handleCellChange}
@@ -279,7 +337,7 @@ export default function CanvasScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={store.reset}
+              onPress={reset}
               style={[styles.actionBtn, { backgroundColor: colors.background }]}
               activeOpacity={0.7}
             >
@@ -290,13 +348,13 @@ export default function CanvasScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={store.undo}
-              disabled={!store.canUndo}
+              onPress={undo}
+              disabled={!canUndo}
               style={[
                 styles.actionBtn,
                 {
                   backgroundColor: colors.background,
-                  opacity: store.canUndo ? 1 : 0.4,
+                  opacity: canUndo ? 1 : 0.4,
                 },
               ]}
               activeOpacity={0.7}
@@ -308,13 +366,13 @@ export default function CanvasScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={store.redo}
-              disabled={!store.canRedo}
+              onPress={redo}
+              disabled={!canRedo}
               style={[
                 styles.actionBtn,
                 {
                   backgroundColor: colors.background,
-                  opacity: store.canRedo ? 1 : 0.4,
+                  opacity: canRedo ? 1 : 0.4,
                 },
               ]}
               activeOpacity={0.7}

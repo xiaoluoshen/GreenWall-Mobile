@@ -1,17 +1,6 @@
 import React, { useMemo, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Dimensions,
-  Platform,
-} from "react-native";
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from "react-native-gesture-handler";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useColors } from "@/hooks/use-colors";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
@@ -83,7 +72,6 @@ export function ContributionCalendar({
   }, [days]);
 
   const dayLabelWidth = 28;
-  const calendarWidth = (maxWeek + 1) * CELL_TOTAL + dayLabelWidth;
   const { t } = useI18n();
 
   const getCellAtPosition = useCallback(

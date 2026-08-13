@@ -15,7 +15,7 @@
     *   修复了 GitHub Actions 构建时缺失 `expo-localization` 依赖的问题。
     *   同步更新 `app.config.ts` 插件配置，提升 Android 构建产物的稳定性。
 *   **移除冗余代码**：
-    *   清理了冗余的 Manus 运行时初始化代码，优化了应用启动性能。
+    *   清理了冗余的运行时初始化代码，优化了应用启动性能。
 
 ---
 
@@ -45,7 +45,4 @@
 
 ---
 
-> **Powered by Manus**
-> 
-> 本项目由 Manus 自动化重构与维护。
 > GitHub 仓库: [xiaoluoshen/GreenWall-Mobile](https://github.com/xiaoluoshen/GreenWall-Mobile)
