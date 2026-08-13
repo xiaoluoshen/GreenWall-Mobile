@@ -17,11 +17,10 @@ import {
   MLargeTitle,
   MListItem,
   MButton,
-  MSwitch,
   MDivider,
   MSectionLabel,
 } from "@/components/miuix";
-import { useI18n, type Language } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import {
   getSavedToken,
   getSavedUser,

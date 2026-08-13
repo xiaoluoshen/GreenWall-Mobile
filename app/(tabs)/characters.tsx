@@ -16,18 +16,12 @@ import {
   MSegmentedControl,
   MButton,
 } from "@/components/miuix";
-import {
-  ALL_PATTERNS,
-  type PatternCategory,
-  type CharacterPattern,
-} from "@/lib/character-patterns";
-import {
-  getContributionColor,
-  type ContributionLevel,
-} from "@/lib/contribution-store";
+import { ALL_PATTERNS, type PatternCategory } from "@/lib/character-patterns";
+import { getContributionColor } from "@/lib/contribution-store";
 import { useI18n } from "@/lib/i18n";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { PENDING_PATTERN_KEY } from "@/lib/pattern-stamp";
 
 const CATEGORIES: PatternCategory[] = [
   "uppercase",
@@ -52,7 +46,7 @@ export default function CharactersScreen() {
 
   const category = CATEGORIES[categoryIndex];
   const patterns = ALL_PATTERNS[category];
-  const charKeys = useMemo(() => Object.keys(patterns), [category]);
+  const charKeys = useMemo(() => Object.keys(patterns), [patterns]);
 
   const categoryLabels = useMemo(() => [
     t.characters.uppercase,
@@ -68,7 +62,7 @@ export default function CharactersScreen() {
 
     // Store the pattern in AsyncStorage for the canvas to pick up
     await AsyncStorage.setItem(
-      "greenwall_pending_pattern",
+      PENDING_PATTERN_KEY,
       JSON.stringify({
         char: selectedChar,
         pattern: selectedPattern,

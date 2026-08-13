@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useCallback, useMemo, useEf
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Localization from "expo-localization";
 
+export { interpolate } from "./interpolate";
+
 export type Language = "en" | "zh";
 
 const STORAGE_KEY = "greenwall_language";
@@ -57,6 +59,9 @@ type Translations = {
     sourceCode: string;
     myRepos: string;
     aboutSubtitle: string;
+    github: string;
+    telegram: string;
+    greenWallMobile: string;
   };
   repo: {
     title: string;
@@ -80,6 +85,8 @@ type Translations = {
     loading: string;
     error: string;
     success: string;
+    retry: string;
+    close: string;
   };
   calendar: {
     months: string[];
@@ -321,12 +328,4 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
 export function useI18n() {
   return useContext(I18nContext);
-}
-
-export function interpolate(template: string, vars: Record<string, string | number>): string {
-  let result = template;
-  for (const [key, value] of Object.entries(vars)) {
-    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), String(value));
-  }
-  return result;
 }

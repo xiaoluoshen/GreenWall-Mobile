@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { interpolate } from "../i18n";
+import { interpolate } from "../interpolate";
 
 describe("interpolate", () => {
   it("should replace single variable", () => {
