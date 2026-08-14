@@ -11,11 +11,11 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-  MCard,
-  MLargeTitle,
-  MSegmentedControl,
-  MButton,
-} from "@/components/miuix";
+  MaterialButton,
+  MaterialCard,
+  MaterialLargeTitle,
+  MaterialSegmentedControl,
+} from "@/components/material-ui";
 import { ALL_PATTERNS, type PatternCategory } from "@/lib/character-patterns";
 import { getContributionColor } from "@/lib/contribution-store";
 import { useI18n } from "@/lib/i18n";
@@ -136,11 +136,11 @@ export default function CharactersScreen() {
   return (
     <ScreenContainer>
       {/* Title */}
-      <MLargeTitle style={{ marginTop: 8 }}>{t.characters.title}</MLargeTitle>
+      <MaterialLargeTitle style={{ marginTop: 8 }}>{t.characters.title}</MaterialLargeTitle>
 
       {/* Category Tabs */}
       <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
-        <MSegmentedControl
+        <MaterialSegmentedControl
           options={categoryLabels}
           selectedIndex={categoryIndex}
           onSelect={setCategoryIndex}
@@ -159,7 +159,7 @@ export default function CharactersScreen() {
           selectedPattern ? (
             <View>
               {/* Preview */}
-              <MCard>
+              <MaterialCard>
                 <Text
                   style={[
                     styles.previewTitle,
@@ -189,11 +189,11 @@ export default function CharactersScreen() {
                     </View>
                   ))}
                 </View>
-              </MCard>
+              </MaterialCard>
 
               {/* Place Button */}
               <View style={{ marginHorizontal: 16, marginTop: 12 }}>
-                <MButton
+                <MaterialButton
                   title={t.characters.tapToPlace}
                   onPress={handlePlaceOnCanvas}
                   variant="primary"

@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Appearance, View, useColorScheme as useSystemColorScheme } from "react-native";
+import { PaperProvider } from "react-native-paper";
 import { colorScheme as nativewindColorScheme, vars } from "nativewind";
 
 import { SchemeColors, type ColorScheme } from "@/constants/theme";
+import { materialDarkTheme, materialLightTheme } from "@/lib/material-theme";
 
 type ThemeContextValue = {
   colorScheme: ColorScheme;
@@ -61,9 +63,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }),
     [colorScheme, setColorScheme],
   );
+  const materialTheme = colorScheme === "dark" ? materialDarkTheme : materialLightTheme;
+
   return (
     <ThemeContext.Provider value={value}>
-      <View style={[{ flex: 1 }, themeVariables]}>{children}</View>
+      <PaperProvider theme={materialTheme}>
+        <View style={[{ flex: 1 }, themeVariables]}>{children}</View>
+      </PaperProvider>
     </ThemeContext.Provider>
   );
 }

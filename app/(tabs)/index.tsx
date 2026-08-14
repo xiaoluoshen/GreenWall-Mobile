@@ -19,12 +19,12 @@ import {
   ContributionLegend,
 } from "@/components/contribution-calendar";
 import {
-  MCard,
-  MLargeTitle,
-  MButton,
-  MSegmentedControl,
-  MSwitch,
-} from "@/components/miuix";
+  MaterialButton,
+  MaterialCard,
+  MaterialLargeTitle,
+  MaterialSegmentedControl,
+  MaterialSwitch,
+} from "@/components/material-ui";
 import {
   useContributionStore,
   getYearDays,
@@ -215,7 +215,7 @@ export default function CanvasScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
-        <MLargeTitle style={{ marginTop: 8 }}>{t.canvas.title}</MLargeTitle>
+        <MaterialLargeTitle style={{ marginTop: 8 }}>{t.canvas.title}</MaterialLargeTitle>
 
         {/* Year Selector */}
         <ScrollView
@@ -260,7 +260,7 @@ export default function CanvasScreen() {
         </Text>
 
         {/* Calendar */}
-        <MCard style={{ padding: 12, overflow: "hidden" }}>
+        <MaterialCard style={{ padding: 12, overflow: "hidden" }}>
           <ContributionCalendar
             year={year}
             contributions={contributions}
@@ -270,12 +270,12 @@ export default function CanvasScreen() {
             onBatchEnd={handleBatchEnd}
           />
           <ContributionLegend />
-        </MCard>
+        </MaterialCard>
 
         {/* Toolbar */}
-        <MCard>
+        <MaterialCard>
           {/* Pen / Eraser */}
-          <MSegmentedControl
+          <MaterialSegmentedControl
             options={[t.canvas.pen, t.canvas.eraser]}
             selectedIndex={tool === "pen" ? 0 : 1}
             onSelect={(i) => setTool(i === 0 ? "pen" : "eraser")}
@@ -383,11 +383,11 @@ export default function CanvasScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-        </MCard>
+        </MaterialCard>
 
         {/* Create Repo Button */}
         <View style={{ marginHorizontal: 16, marginTop: 12 }}>
-          <MButton
+          <MaterialButton
             title={t.canvas.createRepo}
             onPress={handleCreateRepo}
             variant="primary"
@@ -452,7 +452,7 @@ export default function CanvasScreen() {
               <Text style={[styles.switchLabel, { color: colors.foreground }]}>
                 {repoPrivate ? t.repo.private : t.repo.public}
               </Text>
-              <MSwitch
+              <MaterialSwitch
                 value={repoPrivate}
                 onValueChange={setRepoPrivate}
               />
@@ -470,14 +470,14 @@ export default function CanvasScreen() {
             )}
 
             <View style={styles.modalButtons}>
-              <MButton
+              <MaterialButton
                 title={t.repo.cancel}
                 variant="secondary"
                 onPress={() => setShowRepoModal(false)}
                 disabled={generating}
                 style={{ flex: 1, marginRight: 8 }}
               />
-              <MButton
+              <MaterialButton
                 title={t.repo.confirm}
                 variant="primary"
                 onPress={handleGenerateAndPush}

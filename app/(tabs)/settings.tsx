@@ -13,13 +13,13 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import {
-  MCard,
-  MLargeTitle,
-  MListItem,
-  MButton,
-  MDivider,
-  MSectionLabel,
-} from "@/components/miuix";
+  MaterialButton,
+  MaterialCard,
+  MaterialDivider,
+  MaterialLargeTitle,
+  MaterialListItem,
+  MaterialSectionLabel,
+} from "@/components/material-ui";
 import { useI18n } from "@/lib/i18n";
 import {
   getSavedToken,
@@ -85,14 +85,14 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
-        <MLargeTitle style={{ marginTop: 8 }}>{t.settings.title}</MLargeTitle>
+        <MaterialLargeTitle style={{ marginTop: 8 }}>{t.settings.title}</MaterialLargeTitle>
 
         {/* Account Section */}
-        <MSectionLabel>{t.settings.account}</MSectionLabel>
-        <MCard style={{ padding: 0 }}>
+        <MaterialSectionLabel>{t.settings.account}</MaterialSectionLabel>
+        <MaterialCard style={{ padding: 0 }}>
           {user ? (
             <>
-              <MListItem
+              <MaterialListItem
                 title={user.name || user.login}
                 subtitle={`${t.settings.loggedInAs} @${user.login}`}
                 showArrow={false}
@@ -104,9 +104,9 @@ export default function SettingsScreen() {
                   />
                 }
               />
-              <MDivider style={{ marginHorizontal: 0 }} />
+              <MaterialDivider style={{ marginHorizontal: 0 }} />
               <View style={{ padding: 16 }}>
-                <MButton
+                <MaterialButton
                   title={t.settings.logout}
                   variant="secondary"
                   onPress={handleLogout}
@@ -115,7 +115,7 @@ export default function SettingsScreen() {
             </>
           ) : (
             <>
-              <MListItem
+              <MaterialListItem
                 title={t.settings.notLoggedIn}
                 subtitle={t.settings.tokenHint}
                 showArrow={false}
@@ -127,7 +127,7 @@ export default function SettingsScreen() {
                   />
                 }
               />
-              <MDivider style={{ marginHorizontal: 0 }} />
+              <MaterialDivider style={{ marginHorizontal: 0 }} />
               <View style={{ padding: 16 }}>
                 <Text
                   style={[styles.inputLabel, { color: colors.muted }]}
@@ -154,7 +154,7 @@ export default function SettingsScreen() {
                   ]}
                 />
                 <View style={styles.tokenActions}>
-                  <MButton
+                  <MaterialButton
                     title={showToken ? t.settings.hideToken : t.settings.showToken}
                     variant="text"
                     compact
@@ -167,7 +167,7 @@ export default function SettingsScreen() {
                     style={{ marginTop: 12 }}
                   />
                 ) : (
-                  <MButton
+                  <MaterialButton
                     title={t.settings.login}
                     variant="primary"
                     onPress={handleLogin}
@@ -178,28 +178,28 @@ export default function SettingsScreen() {
               </View>
             </>
           )}
-        </MCard>
+        </MaterialCard>
 
         {/* Preferences */}
-        <MSectionLabel>{t.settings.language}</MSectionLabel>
-        <MCard style={{ padding: 0 }}>
-          <MListItem
+        <MaterialSectionLabel>{t.settings.language}</MaterialSectionLabel>
+        <MaterialCard style={{ padding: 0 }}>
+          <MaterialListItem
             title={t.settings.language}
             rightText={language === "en" ? "English" : "中文"}
             onPress={toggleLanguage}
           />
-        </MCard>
+        </MaterialCard>
 
         {/* About */}
-        <MSectionLabel>{t.settings.about}</MSectionLabel>
-        <MCard style={{ padding: 0 }}>
-          <MListItem
+        <MaterialSectionLabel>{t.settings.about}</MaterialSectionLabel>
+        <MaterialCard style={{ padding: 0 }}>
+          <MaterialListItem
             title={t.settings.version}
-            rightText="1.2.0"
+            rightText="1.3.0"
             showArrow={false}
           />
-          <MDivider style={{ marginHorizontal: 0 }} />
-          <MListItem
+          <MaterialDivider style={{ marginHorizontal: 0 }} />
+          <MaterialListItem
             title={t.settings.github}
             rightText="zmrlft/GreenWall"
             onPress={() =>
@@ -213,8 +213,8 @@ export default function SettingsScreen() {
               />
             }
           />
-          <MDivider style={{ marginHorizontal: 0 }} />
-          <MListItem
+          <MaterialDivider style={{ marginHorizontal: 0 }} />
+          <MaterialListItem
             title={t.settings.myRepos}
             rightText="xiaoluoshen/GreenWall-Mobile"
             onPress={() =>
@@ -228,8 +228,8 @@ export default function SettingsScreen() {
               />
             }
           />
-          <MDivider style={{ marginHorizontal: 0 }} />
-          <MListItem
+          <MaterialDivider style={{ marginHorizontal: 0 }} />
+          <MaterialListItem
             title={t.settings.telegram}
             rightText="@lsposed0"
             onPress={() =>
@@ -243,8 +243,8 @@ export default function SettingsScreen() {
               />
             }
           />
-          <MDivider style={{ marginHorizontal: 0 }} />
-          <MListItem
+          <MaterialDivider style={{ marginHorizontal: 0 }} />
+          <MaterialListItem
             title={t.settings.greenWallMobile}
             subtitle={t.settings.aboutSubtitle}
             showArrow={false}
@@ -256,7 +256,7 @@ export default function SettingsScreen() {
               />
             }
           />
-        </MCard>
+        </MaterialCard>
       </ScrollView>
     </ScreenContainer>
   );
