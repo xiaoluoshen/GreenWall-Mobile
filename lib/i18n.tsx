@@ -37,6 +37,11 @@ type Translations = {
     tapToPlace: string;
     preview: string;
   };
+  navigation: {
+    canvas: string;
+    characters: string;
+    settings: string;
+  };
   settings: {
     title: string;
     account: string;
@@ -122,6 +127,11 @@ const en: Translations = {
     symbols: "Symbols",
     tapToPlace: "Tap on calendar to place",
     preview: "Preview",
+  },
+  navigation: {
+    canvas: "Canvas",
+    characters: "Characters",
+    settings: "Settings",
   },
   settings: {
     title: "Settings",
@@ -209,6 +219,11 @@ const zh: Translations = {
     tapToPlace: "点击日历放置字符",
     preview: "预览",
   },
+  navigation: {
+    canvas: "画布",
+    characters: "字符",
+    settings: "设置",
+  },
   settings: {
     title: "设置",
     account: "GitHub 账户",
@@ -216,7 +231,7 @@ const zh: Translations = {
     logout: "退出登录",
     tokenLabel: "个人访问令牌",
     tokenPlaceholder: "ghp_xxxxxxxxxxxx",
-    tokenHint: "在 GitHub 设置 > 开发者设置 > 个人访问令牌 中生成",
+    tokenHint: "请在 GitHub 设置 > 开发者设置 > 个人访问令牌中创建",
     remember: "记住令牌",
     language: "语言",
     year: "年份",
@@ -226,8 +241,8 @@ const zh: Translations = {
     loginError: "登录失败，请检查令牌是否正确",
     loggedInAs: "已登录为",
     notLoggedIn: "未登录",
-    showToken: "显示 Token",
-    hideToken: "隐藏 Token",
+    showToken: "显示令牌",
+    hideToken: "隐藏令牌",
     sourceCode: "源代码",
     myRepos: "我的仓库",
     aboutSubtitle: "基于 zmrlft 的 GreenWall",

@@ -4,8 +4,11 @@ import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "react-native-paper";
 
+import { useI18n } from "@/lib/i18n";
+
 export default function TabLayout() {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
 
@@ -33,7 +36,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Canvas",
+          title: t.navigation.canvas,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="brush-variant" size={size} color={color} />
           ),
@@ -42,7 +45,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="characters"
         options={{
-          title: "Characters",
+          title: t.navigation.characters,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="format-letter-case" size={size} color={color} />
           ),
@@ -51,7 +54,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
+          title: t.navigation.settings,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="cog-outline" size={size} color={color} />
           ),

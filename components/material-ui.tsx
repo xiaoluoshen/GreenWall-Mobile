@@ -1,4 +1,4 @@
-import { View, StyleSheet, type TextStyle, type ViewStyle } from "react-native";
+import { Animated, View, StyleSheet, type TextStyle, type ViewStyle } from "react-native";
 import {
   Button,
   Divider,
@@ -10,12 +10,16 @@ import {
   useTheme,
 } from "react-native-paper";
 
+import { MotionFadeIn, usePressScale } from "@/components/motion";
+
 export function MaterialCard({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
   const { colors } = useTheme();
   return (
-    <Surface elevation={1} style={[styles.card, { backgroundColor: colors.elevation.level1 }, style]}>
-      {children}
-    </Surface>
+    <MotionFadeIn>
+      <Surface elevation={1} style={[styles.card, { backgroundColor: colors.elevation.level1 }, style]}>
+        {children}
+      </Surface>
+    </MotionFadeIn>
   );
 }
 
@@ -79,7 +83,22 @@ export function MaterialButton({
   compact?: boolean;
 }) {
   const mode = variant === "primary" ? "contained" : variant === "secondary" ? "outlined" : "text";
-  return <Button mode={mode} onPress={onPress} disabled={disabled} compact={compact} style={style} contentStyle={compact ? undefined : styles.buttonContent}>{title}</Button>;
+  const pressScale = usePressScale(disabled);
+  return (
+    <Animated.View style={[pressScale.style, style]}>
+      <Button
+        mode={mode}
+        onPress={onPress}
+        onPressIn={pressScale.onPressIn}
+        onPressOut={pressScale.onPressOut}
+        disabled={disabled}
+        compact={compact}
+        contentStyle={compact ? undefined : styles.buttonContent}
+      >
+        {title}
+      </Button>
+    </Animated.View>
+  );
 }
 
 export function MaterialSegmentedControl({
