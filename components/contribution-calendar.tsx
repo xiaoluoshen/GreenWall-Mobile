@@ -6,6 +6,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   getYearDays,
   getContributionColor,
+  isContributionDateInYear,
   type ContributionMap,
   type ContributionLevel,
 } from "@/lib/contribution-store";
@@ -88,7 +89,7 @@ export function ContributionCalendar({
   const handleCellTouch = useCallback(
     (x: number, y: number) => {
       const cell = getCellAtPosition(x, y);
-      if (!cell) return;
+      if (!cell || !isContributionDateInYear(cell.date, year)) return;
       if (lastCellRef.current === cell.date) return;
       lastCellRef.current = cell.date;
 
@@ -96,7 +97,7 @@ export function ContributionCalendar({
       batchRef.current[cell.date] = count;
       onCellChange?.(cell.date, count);
     },
-    [getCellAtPosition, tool, intensity, onCellChange]
+    [getCellAtPosition, tool, intensity, onCellChange, year]
   );
 
   const panGesture = Gesture.Pan()
@@ -121,7 +122,7 @@ export function ContributionCalendar({
     .runOnJS(true)
     .onEnd((e) => {
       const cell = getCellAtPosition(e.x, e.y);
-      if (!cell) return;
+      if (!cell || !isContributionDateInYear(cell.date, year)) return;
       const count = tool === "pen" ? intensity : 0;
       onCellChange?.(cell.date, count);
       onBatchEnd?.({ [cell.date]: count });

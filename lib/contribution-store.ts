@@ -1,20 +1,28 @@
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type ContributionLevel = 0 | 1 | 3 | 6 | 9;
 
 export interface ContributionDay {
-  date: string; // YYYY-MM-DD
+  date: string;
   count: number;
-  weekday: number; // 0=Sun, 6=Sat
+  weekday: number;
   week: number;
 }
 
 export type ContributionMap = Record<string, number>;
 
-const STORAGE_KEY_PREFIX = "greenwall_contributions_";
+interface ContributionStoreState {
+  contributions: ContributionMap;
+  history: ContributionMap[];
+  historyIndex: number;
+  loadedYear: number | null;
+}
 
-// GitHub contribution colors
+const STORAGE_KEY_PREFIX = "greenwall_contributions_";
+const MAX_HISTORY_ENTRIES = 100;
+const CONTRIBUTION_LEVELS: readonly ContributionLevel[] = [0, 1, 3, 6, 9];
+
 export const CONTRIBUTION_COLORS = {
   light: {
     0: "#ebedf0",
@@ -34,7 +42,7 @@ export const CONTRIBUTION_COLORS = {
 
 export function getContributionColor(
   count: number,
-  scheme: "light" | "dark"
+  scheme: "light" | "dark",
 ): string {
   const colors = CONTRIBUTION_COLORS[scheme];
   if (count === 0) return colors[0];
@@ -48,11 +56,8 @@ export function getYearDays(year: number): ContributionDay[] {
   const days: ContributionDay[] = [];
   const start = new Date(year, 0, 1);
   const end = new Date(year, 11, 31);
-
-  // Adjust start to the previous Sunday
-  const startDay = start.getDay();
   const adjustedStart = new Date(start);
-  adjustedStart.setDate(adjustedStart.getDate() - startDay);
+  adjustedStart.setDate(adjustedStart.getDate() - start.getDay());
 
   let week = 0;
   const current = new Date(adjustedStart);
@@ -60,15 +65,11 @@ export function getYearDays(year: number): ContributionDay[] {
   while (current <= end || current.getDay() !== 0) {
     if (current > end && current.getDay() === 0 && days.length > 0) break;
 
-    const dateStr = formatDate(current);
     const weekday = current.getDay();
-
-    if (weekday === 0 && days.length > 0) {
-      week++;
-    }
+    if (weekday === 0 && days.length > 0) week += 1;
 
     days.push({
-      date: dateStr,
+      date: formatDate(current),
       count: 0,
       weekday,
       week,
@@ -81,188 +82,270 @@ export function getYearDays(year: number): ContributionDay[] {
 }
 
 export function formatDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-export function formatDateDisplay(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-");
-  return `${y}/${m}/${d}`;
+export function formatDateDisplay(date: string): string {
+  const [year, month, day] = date.split("-");
+  return `${year}/${month}/${day}`;
+}
+
+export function isContributionDateInYear(date: string, year: number): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match || Number(match[1]) !== year) return false;
+
+  const parsedDate = new Date(year, Number(match[2]) - 1, Number(match[3]));
+  return formatDate(parsedDate) === date;
+}
+
+export function sanitizeContributionMap(value: unknown, year: number): ContributionMap {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+  const sanitized: ContributionMap = {};
+  for (const [date, count] of Object.entries(value as Record<string, unknown>)) {
+    if (
+      isContributionDateInYear(date, year) &&
+      typeof count === "number" &&
+      isContributionLevel(count) &&
+      count > 0
+    ) {
+      sanitized[date] = count;
+    }
+  }
+
+  return sanitized;
+}
+
+function isContributionLevel(value: number): value is ContributionLevel {
+  return CONTRIBUTION_LEVELS.includes(value as ContributionLevel);
+}
+
+function applyCellUpdates(
+  contributions: ContributionMap,
+  updates: Record<string, number>,
+  year: number,
+): ContributionMap {
+  let hasChanged = false;
+  const nextContributions = { ...contributions };
+
+  for (const [date, count] of Object.entries(updates)) {
+    if (!isContributionDateInYear(date, year) || !isContributionLevel(count)) continue;
+
+    if (count === 0) {
+      if (date in nextContributions) {
+        delete nextContributions[date];
+        hasChanged = true;
+      }
+    } else if (nextContributions[date] !== count) {
+      nextContributions[date] = count;
+      hasChanged = true;
+    }
+  }
+
+  return hasChanged ? nextContributions : contributions;
+}
+
+function contributionMapsEqual(left: ContributionMap, right: ContributionMap): boolean {
+  const leftEntries = Object.entries(left);
+  if (leftEntries.length !== Object.keys(right).length) return false;
+  return leftEntries.every(([date, count]) => right[date] === count);
+}
+
+function commitSnapshot(
+  state: ContributionStoreState,
+  contributions: ContributionMap,
+): ContributionStoreState {
+  const currentHistorySnapshot = state.history[state.historyIndex] ?? {};
+  if (contributionMapsEqual(currentHistorySnapshot, contributions)) {
+    if (state.contributions === contributions) return state;
+    return { ...state, contributions };
+  }
+
+  const history = state.history
+    .slice(0, state.historyIndex + 1)
+    .concat({ ...contributions })
+    .slice(-MAX_HISTORY_ENTRIES);
+
+  return {
+    ...state,
+    contributions,
+    history,
+    historyIndex: history.length - 1,
+  };
 }
 
 export function useContributionStore(year: number) {
-  const [contributions, setContributions] = useState<ContributionMap>({});
-  const [history, setHistory] = useState<ContributionMap[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [loaded, setLoaded] = useState(false);
-  const loadedYearRef = useRef<number | null>(null);
-
+  const [state, setState] = useState<ContributionStoreState>({
+    contributions: {},
+    history: [{}],
+    historyIndex: 0,
+    loadedYear: null,
+  });
+  const loadRequestRef = useRef(0);
+  const saveQueueRef = useRef(Promise.resolve());
   const storageKey = `${STORAGE_KEY_PREFIX}${year}`;
 
+  const persist = useCallback(
+    (contributions: ContributionMap) => {
+      const serializedContributions = JSON.stringify(contributions);
+      saveQueueRef.current = saveQueueRef.current
+        .catch(() => undefined)
+        .then(() => AsyncStorage.setItem(storageKey, serializedContributions))
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn(`Unable to persist contributions for ${year}: ${message}`);
+        });
+    },
+    [storageKey, year],
+  );
+
   const load = useCallback(async () => {
-    if (loadedYearRef.current === year) return;
+    if (state.loadedYear === year) return;
+
+    const requestId = loadRequestRef.current + 1;
+    loadRequestRef.current = requestId;
+    setState({
+      contributions: {},
+      history: [{}],
+      historyIndex: 0,
+      loadedYear: null,
+    });
+
     try {
-      const data = await AsyncStorage.getItem(storageKey);
-      if (data) {
-        const parsed = JSON.parse(data);
-        setContributions(parsed);
-        setHistory([parsed]);
-        setHistoryIndex(0);
-      } else {
-        setContributions({});
-        setHistory([{}]);
-        setHistoryIndex(0);
-      }
-      loadedYearRef.current = year;
-      setLoaded(true);
-    } catch {
-      setContributions({});
-      setHistory([{}]);
-      setHistoryIndex(0);
-      setLoaded(true);
+      const storedValue = await AsyncStorage.getItem(storageKey);
+      const parsedValue: unknown = storedValue ? JSON.parse(storedValue) : {};
+      const contributions = sanitizeContributionMap(parsedValue, year);
+
+      if (loadRequestRef.current !== requestId) return;
+      setState({
+        contributions,
+        history: [{ ...contributions }],
+        historyIndex: 0,
+        loadedYear: year,
+      });
+    } catch (error: unknown) {
+      if (loadRequestRef.current !== requestId) return;
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`Unable to load contributions for ${year}: ${message}`);
+      setState({
+        contributions: {},
+        history: [{}],
+        historyIndex: 0,
+        loadedYear: year,
+      });
     }
-  }, [storageKey, year]);
-
-  const save = useCallback(
-    async (data: ContributionMap) => {
-      try {
-        await AsyncStorage.setItem(storageKey, JSON.stringify(data));
-      } catch {
-        // silently fail
-      }
-    },
-    [storageKey]
-  );
-
-  const pushHistory = useCallback(
-    (newContributions: ContributionMap) => {
-      const newHistory = history.slice(0, historyIndex + 1);
-      newHistory.push({ ...newContributions });
-      setHistory(newHistory);
-      setHistoryIndex(newHistory.length - 1);
-    },
-    [history, historyIndex]
-  );
+  }, [state.loadedYear, storageKey, year]);
 
   const setCell = useCallback(
     (date: string, count: number) => {
-      setContributions((prev) => {
-        const next = { ...prev };
-        if (count === 0) {
-          delete next[date];
-        } else {
-          next[date] = count;
-        }
-        save(next);
-        return next;
+      setState((previousState) => {
+        const contributions = applyCellUpdates(
+          previousState.contributions,
+          { [date]: count },
+          year,
+        );
+        if (contributions === previousState.contributions) return previousState;
+        return { ...previousState, contributions };
       });
     },
-    [save]
-  );
-
-  const setCells = useCallback(
-    (cells: Record<string, number>) => {
-      setContributions((prev) => {
-        const next = { ...prev };
-        for (const [date, count] of Object.entries(cells)) {
-          if (count === 0) {
-            delete next[date];
-          } else {
-            next[date] = count;
-          }
-        }
-        pushHistory(next);
-        save(next);
-        return next;
-      });
-    },
-    [save, pushHistory]
+    [year],
   );
 
   const commitBatch = useCallback(
     (cells: Record<string, number>) => {
-      setContributions((prev) => {
-        const next = { ...prev };
-        for (const [date, count] of Object.entries(cells)) {
-          if (count === 0) {
-            delete next[date];
-          } else {
-            next[date] = count;
-          }
-        }
-        pushHistory(next);
-        save(next);
-        return next;
+      setState((previousState) => {
+        const contributions = applyCellUpdates(
+          previousState.contributions,
+          cells,
+          year,
+        );
+        const nextState = commitSnapshot(previousState, contributions);
+        if (nextState === previousState) return previousState;
+        persist(contributions);
+        return nextState;
       });
     },
-    [save, pushHistory]
+    [persist, year],
+  );
+
+  const replaceContributions = useCallback(
+    (nextContributions: ContributionMap) => {
+      const sanitizedContributions = sanitizeContributionMap(nextContributions, year);
+      setState((previousState) => {
+        const nextState = commitSnapshot(previousState, sanitizedContributions);
+        if (nextState === previousState) return previousState;
+        persist(sanitizedContributions);
+        return nextState;
+      });
+    },
+    [persist, year],
   );
 
   const allGreen = useCallback(
     (days: ContributionDay[], intensity: ContributionLevel) => {
-      const next: ContributionMap = {};
       const today = new Date();
+      const contributions: ContributionMap = {};
+
       for (const day of days) {
-        const dayDate = new Date(day.date);
-        if (dayDate <= today) {
-          next[day.date] = intensity;
-        }
+        if (!isContributionDateInYear(day.date, year)) continue;
+        const [dayYear, month, dayOfMonth] = day.date.split("-").map(Number);
+        const date = new Date(dayYear, month - 1, dayOfMonth);
+        if (date <= today) contributions[day.date] = intensity;
       }
-      setContributions(next);
-      pushHistory(next);
-      save(next);
+
+      replaceContributions(contributions);
     },
-    [save, pushHistory]
+    [replaceContributions, year],
   );
 
   const reset = useCallback(() => {
-    setContributions({});
-    pushHistory({});
-    save({});
-  }, [save, pushHistory]);
+    replaceContributions({});
+  }, [replaceContributions]);
 
   const undo = useCallback(() => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      const prev = history[newIndex];
-      setHistoryIndex(newIndex);
-      setContributions(prev);
-      save(prev);
-    }
-  }, [history, historyIndex, save]);
+    setState((previousState) => {
+      if (previousState.historyIndex <= 0) return previousState;
+
+      const historyIndex = previousState.historyIndex - 1;
+      const contributions = previousState.history[historyIndex];
+      persist(contributions);
+      return { ...previousState, contributions, historyIndex };
+    });
+  }, [persist]);
 
   const redo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      const next = history[newIndex];
-      setHistoryIndex(newIndex);
-      setContributions(next);
-      save(next);
-    }
-  }, [history, historyIndex, save]);
+    setState((previousState) => {
+      if (previousState.historyIndex >= previousState.history.length - 1) {
+        return previousState;
+      }
 
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
+      const historyIndex = previousState.historyIndex + 1;
+      const contributions = previousState.history[historyIndex];
+      persist(contributions);
+      return { ...previousState, contributions, historyIndex };
+    });
+  }, [persist]);
 
-  const totalContributions = useMemo(() => {
-    return Object.values(contributions).reduce((sum, c) => sum + c, 0);
-  }, [contributions]);
+  const totalContributions = useMemo(
+    () => Object.values(state.contributions).reduce((sum, count) => sum + count, 0),
+    [state.contributions],
+  );
 
   return {
-    contributions,
-    loaded,
+    contributions: state.contributions,
+    loaded: state.loadedYear === year,
     load,
     setCell,
-    setCells,
     commitBatch,
     allGreen,
     reset,
     undo,
     redo,
-    canUndo,
-    canRedo,
+    canUndo: state.historyIndex > 0,
+    canRedo: state.historyIndex < state.history.length - 1,
     totalContributions,
   };
 }

@@ -4,6 +4,8 @@ import {
   getContributionColor,
   formatDate,
   formatDateDisplay,
+  isContributionDateInYear,
+  sanitizeContributionMap,
   CONTRIBUTION_COLORS,
 } from "../contribution-store";
 
@@ -82,5 +84,45 @@ describe("formatDate", () => {
 describe("formatDateDisplay", () => {
   it("should format date string as YYYY/MM/DD", () => {
     expect(formatDateDisplay("2026-01-15")).toBe("2026/01/15");
+  });
+});
+
+describe("isContributionDateInYear", () => {
+  it("accepts valid dates in the selected year", () => {
+    expect(isContributionDateInYear("2024-02-29", 2024)).toBe(true);
+    expect(isContributionDateInYear("2026-12-31", 2026)).toBe(true);
+  });
+
+  it("rejects dates outside the selected year and invalid calendar dates", () => {
+    expect(isContributionDateInYear("2025-12-31", 2026)).toBe(false);
+    expect(isContributionDateInYear("2026-02-29", 2026)).toBe(false);
+    expect(isContributionDateInYear("not-a-date", 2026)).toBe(false);
+  });
+});
+
+describe("sanitizeContributionMap", () => {
+  it("keeps only valid positive contribution levels in the selected year", () => {
+    const result = sanitizeContributionMap(
+      {
+        "2026-01-01": 1,
+        "2026-01-02": 9,
+        "2025-12-31": 6,
+        "2026-02-29": 3,
+        "2026-01-03": 2,
+        "2026-01-04": 0,
+        "2026-01-05": "6",
+      },
+      2026,
+    );
+
+    expect(result).toEqual({
+      "2026-01-01": 1,
+      "2026-01-02": 9,
+    });
+  });
+
+  it("returns an empty map for malformed persisted values", () => {
+    expect(sanitizeContributionMap(null, 2026)).toEqual({});
+    expect(sanitizeContributionMap(["2026-01-01"], 2026)).toEqual({});
   });
 });

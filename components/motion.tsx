@@ -1,16 +1,57 @@
-import { AccessibilityInfo, Animated, Easing, type StyleProp, type ViewStyle } from "react-native";
-import { useEffect, useRef, useState } from "react";
+import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
-export function useReducedMotion() {
+const ReducedMotionContext = createContext(false);
+
+export function ReducedMotionProvider({ children }: { children: ReactNode }) {
   const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then(setReducedMotion).catch(() => undefined);
-    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReducedMotion);
-    return () => subscription.remove();
+    let isMounted = true;
+
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((isReducedMotionEnabled) => {
+        if (isMounted) setReducedMotion(isReducedMotionEnabled);
+      })
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`Unable to read reduced-motion preference: ${message}`);
+      });
+
+    const subscription = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReducedMotion,
+    );
+
+    return () => {
+      isMounted = false;
+      subscription.remove();
+    };
   }, []);
 
-  return reducedMotion;
+  return (
+    <ReducedMotionContext.Provider value={reducedMotion}>
+      {children}
+    </ReducedMotionContext.Provider>
+  );
+}
+
+export function useReducedMotion() {
+  return useContext(ReducedMotionContext);
 }
 
 export function MotionFadeIn({
@@ -18,7 +59,7 @@ export function MotionFadeIn({
   style,
   delay = 0,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   style?: StyleProp<ViewStyle>;
   delay?: number;
 }) {
@@ -33,7 +74,7 @@ export function MotionFadeIn({
       return;
     }
 
-    Animated.parallel([
+    const animation = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
         duration: 220,
@@ -48,7 +89,10 @@ export function MotionFadeIn({
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+
+    animation.start();
+    return () => animation.stop();
   }, [delay, opacity, reducedMotion, translateY]);
 
   return (
@@ -62,16 +106,23 @@ export function usePressScale(disabled = false) {
   const reducedMotion = useReducedMotion();
   const scale = useRef(new Animated.Value(1)).current;
 
-  const animate = (toValue: number) => {
-    if (reducedMotion || disabled) return;
-    Animated.spring(scale, {
-      toValue,
-      damping: 18,
-      stiffness: 260,
-      mass: 0.45,
-      useNativeDriver: true,
-    }).start();
-  };
+  useEffect(() => {
+    if (disabled || reducedMotion) scale.setValue(1);
+  }, [disabled, reducedMotion, scale]);
+
+  const animate = useCallback(
+    (toValue: number) => {
+      if (reducedMotion || disabled) return;
+      Animated.spring(scale, {
+        toValue,
+        damping: 18,
+        stiffness: 260,
+        mass: 0.45,
+        useNativeDriver: true,
+      }).start();
+    },
+    [disabled, reducedMotion, scale],
+  );
 
   return {
     style: { transform: [{ scale }] },

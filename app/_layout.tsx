@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
+import { ReducedMotionProvider } from "@/components/motion";
 import { I18nProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme-provider";
 
@@ -26,12 +27,14 @@ export default function RootLayout() {
     <ThemeProvider>
       <SafeAreaProvider initialMetrics={providerInitialMetrics}>
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <I18nProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-            </Stack>
-            <StatusBar style="auto" />
-          </I18nProvider>
+          <ReducedMotionProvider>
+            <I18nProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+              </Stack>
+              <StatusBar style="auto" />
+            </I18nProvider>
+          </ReducedMotionProvider>
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </ThemeProvider>

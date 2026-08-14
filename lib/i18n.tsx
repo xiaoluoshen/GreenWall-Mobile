@@ -125,7 +125,7 @@ const en: Translations = {
     lowercase: "Lowercase",
     numbers: "Numbers",
     symbols: "Symbols",
-    tapToPlace: "Tap on calendar to place",
+    tapToPlace: "Apply to canvas",
     preview: "Preview",
   },
   navigation: {
@@ -216,7 +216,7 @@ const zh: Translations = {
     lowercase: "小写",
     numbers: "数字",
     symbols: "符号",
-    tapToPlace: "点击日历放置字符",
+    tapToPlace: "应用到画布",
     preview: "预览",
   },
   navigation: {

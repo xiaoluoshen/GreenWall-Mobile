@@ -10,6 +10,7 @@ import {
   Linking,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import Constants from "expo-constants";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import {
@@ -38,6 +39,7 @@ export default function SettingsScreen() {
   const [user, setUser] = useState<GitHubUser | null>(null);
   const [loading, setLoading] = useState(false);
   const [showToken, setShowToken] = useState(false);
+  const appVersion = Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? "1.3.1";
 
   useEffect(() => {
     loadSavedData();
@@ -195,7 +197,7 @@ export default function SettingsScreen() {
         <MaterialCard style={{ padding: 0 }}>
           <MaterialListItem
             title={t.settings.version}
-            rightText="1.3.0"
+            rightText={appVersion}
             showArrow={false}
           />
           <MaterialDivider style={{ marginHorizontal: 0 }} />

@@ -5,7 +5,6 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -69,13 +68,8 @@ export default function CharactersScreen() {
       })
     );
 
-    // Navigate to canvas tab
     router.navigate("/(tabs)");
-    Alert.alert(
-      t.characters.preview,
-      t.characters.tapToPlace
-    );
-  }, [selectedChar, selectedPattern, t]);
+  }, [selectedChar, selectedPattern]);
 
   const renderCharItem = useCallback(
     ({ item }: { item: string }) => {
