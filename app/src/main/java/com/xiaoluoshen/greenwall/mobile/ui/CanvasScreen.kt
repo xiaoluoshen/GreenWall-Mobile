@@ -10,23 +10,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Redo
-import androidx.compose.material.icons.automirrored.outlined.Undo
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.xiaoluoshen.greenwall.mobile.domain.ContributionDomain
 import com.xiaoluoshen.greenwall.mobile.domain.ContributionLevel
 import java.time.Year
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun CanvasScreen(
@@ -41,17 +35,16 @@ fun CanvasScreen(
     onRedo: () -> Unit,
 ) {
     val years = (0..9).map { Year.now().value - it }
-    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
     ) {
         Text(
             text = "画布",
-            style = MaterialTheme.typography.headlineLarge,
+            style = MiuixTheme.textStyles.headline1,
             modifier = Modifier.padding(vertical = 16.dp),
         )
 
@@ -62,24 +55,27 @@ fun CanvasScreen(
                 .horizontalScroll(rememberScrollState()),
         ) {
             years.forEach { year ->
-                FilterChip(
-                    selected = state.year == year,
+                SelectionButton(
+                    text = year.toString(),
+                    isSelected = state.year == year,
                     onClick = { onYearSelected(year) },
-                    label = { Text(year.toString()) },
                 )
             }
         }
 
         Text(
             text = "${state.year} 年共 ${ContributionDomain.total(state.contributions)} 次贡献",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium,
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            style = MiuixTheme.textStyles.body2,
             modifier = Modifier.padding(vertical = 12.dp),
         )
 
-        Card(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            insideMargin = PaddingValues(16.dp),
+        ) {
             if (state.isLoading) {
-                Text("正在加载贡献数据", modifier = Modifier.padding(24.dp))
+                Text("正在加载贡献数据", style = MiuixTheme.textStyles.body1)
             } else {
                 ContributionCalendar(
                     year = state.year,
@@ -94,88 +90,98 @@ fun CanvasScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp),
+            insideMargin = PaddingValues(16.dp),
         ) {
-            Column(Modifier.padding(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SelectionButton(
+                    text = "画笔",
+                    isSelected = !state.isEraserActive,
+                    onClick = { onEraserChanged(false) },
+                )
+                SelectionButton(
+                    text = "橡皮擦",
+                    isSelected = state.isEraserActive,
+                    onClick = { onEraserChanged(true) },
+                )
+            }
+
+            if (!state.isEraserActive) {
+                Text(
+                    text = "强度",
+                    style = MiuixTheme.textStyles.title3,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = !state.isEraserActive,
-                        onClick = { onEraserChanged(false) },
-                        label = { Text("画笔") },
-                    )
-                    FilterChip(
-                        selected = state.isEraserActive,
-                        onClick = { onEraserChanged(true) },
-                        label = { Text("橡皮擦") },
-                    )
-                }
-
-                if (!state.isEraserActive) {
-                    Text(
-                        text = "强度",
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(
-                            ContributionLevel.Low,
-                            ContributionLevel.Medium,
-                            ContributionLevel.High,
-                            ContributionLevel.Maximum,
-                        ).forEach { level ->
-                            FilterChip(
-                                selected = state.selectedLevel == level,
-                                onClick = { onLevelSelected(level) },
-                                label = { Text(level.value.toString()) },
-                            )
-                        }
-                    }
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 16.dp),
-                ) {
-                    OutlinedButton(onClick = onFillAll, modifier = Modifier.weight(1f)) {
-                        Text("全绿")
-                    }
-                    OutlinedButton(onClick = onReset, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Outlined.Delete, contentDescription = null)
-                        Text("重置")
-                    }
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 8.dp),
-                ) {
-                    OutlinedButton(
-                        onClick = onUndo,
-                        enabled = state.canUndo,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(Icons.AutoMirrored.Outlined.Undo, contentDescription = null)
-                        Text("撤销")
-                    }
-                    OutlinedButton(
-                        onClick = onRedo,
-                        enabled = state.canRedo,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(Icons.AutoMirrored.Outlined.Redo, contentDescription = null)
-                        Text("重做")
+                    listOf(
+                        ContributionLevel.Low,
+                        ContributionLevel.Medium,
+                        ContributionLevel.High,
+                        ContributionLevel.Maximum,
+                    ).forEach { level ->
+                        SelectionButton(
+                            text = level.value.toString(),
+                            isSelected = state.selectedLevel == level,
+                            onClick = { onLevelSelected(level) },
+                        )
                     }
                 }
             }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 16.dp),
+            ) {
+                TextButton(
+                    text = "全绿",
+                    onClick = onFillAll,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    text = "重置",
+                    onClick = onReset,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 8.dp),
+            ) {
+                TextButton(
+                    text = "撤销",
+                    onClick = onUndo,
+                    enabled = state.canUndo,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    text = "重做",
+                    onClick = onRedo,
+                    enabled = state.canRedo,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
 
-        Button(
-            onClick = { },
+        TextButton(
+            text = "GitHub 同步将在设置登录后启用",
+            onClick = {},
             enabled = false,
-            contentPadding = PaddingValues(vertical = 14.dp),
+            colors = ButtonDefaults.textButtonColorsPrimary(),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp),
-        ) {
-            Text("GitHub 同步将在设置登录后启用")
-        }
+        )
     }
+}
+
+@Composable
+private fun SelectionButton(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        text = text,
+        onClick = onClick,
+        colors = if (isSelected) ButtonDefaults.textButtonColorsPrimary() else ButtonDefaults.textButtonColors(),
+    )
 }

@@ -1,7 +1,6 @@
 package com.xiaoluoshen.greenwall.mobile.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,11 +15,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,11 +22,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xiaoluoshen.greenwall.mobile.domain.CharacterPatterns
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val categoryTitles = mapOf(
     "uppercase" to "大写",
@@ -57,16 +56,20 @@ fun CharactersScreen(
     ) {
         Text(
             text = "字符",
-            style = MaterialTheme.typography.headlineLarge,
+            style = MiuixTheme.textStyles.headline1,
             modifier = Modifier.padding(vertical = 16.dp),
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             categoryTitles.forEach { (key, title) ->
-                FilterChip(
-                    selected = category == key,
+                TextButton(
+                    text = title,
                     onClick = { category = key },
-                    label = { Text(title) },
+                    colors = if (category == key) {
+                        ButtonDefaults.textButtonColorsPrimary()
+                    } else {
+                        ButtonDefaults.textButtonColors()
+                    },
                 )
             }
         }
@@ -93,26 +96,25 @@ fun CharactersScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 12.dp),
+                insideMargin = PaddingValues(16.dp),
             ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        text = "预览：$selectedCharacter",
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    PatternPreview(
-                        pattern = selectedPattern,
-                        cellSize = 12.dp,
-                        modifier = Modifier.padding(top = 12.dp),
-                    )
-                    Button(
-                        onClick = { onPatternConfirmed(selectedPattern) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                    ) {
-                        Text("应用到画布")
-                    }
-                }
+                Text(
+                    text = "预览：$selectedCharacter",
+                    style = MiuixTheme.textStyles.title2,
+                )
+                PatternPreview(
+                    pattern = selectedPattern,
+                    cellSize = 12.dp,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+                TextButton(
+                    text = "应用到画布",
+                    onClick = { onPatternConfirmed(selectedPattern) },
+                    colors = ButtonDefaults.textButtonColorsPrimary(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                )
             }
         }
     }
@@ -125,26 +127,37 @@ private fun CharacterTile(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val borderColor = if (isSelected) colorScheme.primary else colorScheme.outlineVariant
+    val cardColor = if (isSelected) {
+        MiuixTheme.colorScheme.primaryVariant
+    } else {
+        MiuixTheme.colorScheme.surfaceContainer
+    }
+    val contentColor = if (isSelected) {
+        MiuixTheme.colorScheme.onPrimaryVariant
+    } else {
+        MiuixTheme.colorScheme.onSurface
+    }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Card(
         modifier = Modifier
             .height(84.dp)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) colorScheme.primaryContainer else colorScheme.surfaceVariant)
-            .clickable(onClick = onClick)
-            .padding(8.dp),
+            .fillMaxWidth(),
+        insideMargin = PaddingValues(8.dp),
+        colors = CardDefaults.defaultColors(color = cardColor),
+        onClick = onClick,
     ) {
-        PatternPreview(pattern = pattern, cellSize = 4.dp)
-        Text(
-            text = character,
-            color = borderColor,
-            fontSize = 15.sp,
-            modifier = Modifier.padding(top = 4.dp),
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            PatternPreview(pattern = pattern, cellSize = 4.dp)
+            Text(
+                text = character,
+                color = contentColor,
+                fontSize = 15.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
     }
 }
 
@@ -163,7 +176,7 @@ private fun PatternPreview(
                             .size(cellSize)
                             .padding(0.5.dp)
                             .background(
-                                if (value == 1) Color(0xFF216E39) else MaterialTheme.colorScheme.surface,
+                                if (value == 1) Color(0xFF216E39) else MiuixTheme.colorScheme.surfaceVariant,
                                 RoundedCornerShape(1.dp),
                             ),
                     )

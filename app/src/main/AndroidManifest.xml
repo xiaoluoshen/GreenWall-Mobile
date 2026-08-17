@@ -3,7 +3,7 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@drawable/ic_launcher_foreground"
+        android:icon="@mipmap/ic_launcher"
         android:label="GreenWall"
         android:supportsRtl="true"
         android:theme="@style/Theme.GreenWall">

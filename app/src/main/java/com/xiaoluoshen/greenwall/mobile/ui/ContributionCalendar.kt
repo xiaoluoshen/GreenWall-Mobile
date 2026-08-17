@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -50,7 +50,7 @@ fun ContributionCalendar(
             .mapValues { (_, monthDays) -> monthDays.minOf { it.week } }
     }
     val scrollState = rememberScrollState()
-    val colorScheme = MaterialTheme.colorScheme
+    val colorScheme = MiuixTheme.colorScheme
 
     Column(Modifier.horizontalScroll(scrollState)) {
         MonthLabels(months, maxWeek)
@@ -82,7 +82,7 @@ private fun MonthLabels(months: Map<Month, Int>, maxWeek: Int) {
         months.forEach { (month, week) ->
             Text(
                 text = month.name.take(3).lowercase().replaceFirstChar { it.uppercase() },
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(start = cellStep * week),
             )
@@ -100,7 +100,7 @@ private fun WeekdayLabels() {
             ) {
                 Text(
                     text = label,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     fontSize = 10.sp,
                 )
             }
@@ -177,13 +177,13 @@ private fun HeatmapGrid(
 
 @Composable
 private fun CalendarLegend() {
-    val emptyColor = MaterialTheme.colorScheme.surfaceVariant
+    val emptyColor = MiuixTheme.colorScheme.surfaceVariant
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier.padding(top = 12.dp),
     ) {
-        Text("Less", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        Text("Less", color = MiuixTheme.colorScheme.onSurfaceVariantSummary, fontSize = 12.sp)
         listOf(0, 1, 3, 6, 9).forEach { value ->
             Canvas(Modifier.width(cellSize).height(cellSize)) {
                 drawRoundRect(
@@ -192,7 +192,7 @@ private fun CalendarLegend() {
                 )
             }
         }
-        Text("More", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        Text("More", color = MiuixTheme.colorScheme.onSurfaceVariantSummary, fontSize = 12.sp)
     }
 }
 

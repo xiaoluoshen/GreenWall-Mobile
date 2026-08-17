@@ -3,18 +3,11 @@ package com.xiaoluoshen.greenwall.mobile
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.TextFields
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +27,10 @@ import com.xiaoluoshen.greenwall.mobile.ui.CharactersScreen
 import com.xiaoluoshen.greenwall.mobile.ui.SettingsScreen
 import com.xiaoluoshen.greenwall.mobile.ui.SettingsViewModel
 import com.xiaoluoshen.greenwall.mobile.ui.theme.GreenWallTheme
+import top.yukonga.miuix.kmp.basic.NavigationBar
+import top.yukonga.miuix.kmp.basic.NavigationBarItem
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val CANVAS_ROUTE = "canvas"
 private const val CHARACTERS_ROUTE = "characters"
@@ -73,26 +70,26 @@ private fun GreenWallApp(
     val currentRoute = navigationEntry?.destination?.route ?: CANVAS_ROUTE
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MiuixTheme.colorScheme.background,
         bottomBar = {
             NavigationBar {
-                NavigationItem(
+                NavigationBarItem(
                     selected = currentRoute == CANVAS_ROUTE,
-                    label = "画布",
-                    icon = { Icon(Icons.Outlined.Brush, contentDescription = null) },
                     onClick = { navigationController.navigateTo(CANVAS_ROUTE) },
+                    icon = Icons.Outlined.Brush,
+                    label = "画布",
                 )
-                NavigationItem(
+                NavigationBarItem(
                     selected = currentRoute == CHARACTERS_ROUTE,
-                    label = "字符",
-                    icon = { Icon(Icons.Outlined.TextFields, contentDescription = null) },
                     onClick = { navigationController.navigateTo(CHARACTERS_ROUTE) },
+                    icon = Icons.Outlined.TextFields,
+                    label = "字符",
                 )
-                NavigationItem(
+                NavigationBarItem(
                     selected = currentRoute == SETTINGS_ROUTE,
-                    label = "设置",
-                    icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
                     onClick = { navigationController.navigateTo(SETTINGS_ROUTE) },
+                    icon = Icons.Outlined.Settings,
+                    label = "设置",
                 )
             }
         },
@@ -134,24 +131,6 @@ private fun GreenWallApp(
                     onConsumeMessage = settingsViewModel::consumeMessage,
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun NavigationItem(
-    selected: Boolean,
-    label: String,
-    icon: @Composable () -> Unit,
-    onClick: () -> Unit,
-) {
-    TextButton(onClick = onClick) {
-        Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-            icon()
-            Text(
-                text = label,
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
