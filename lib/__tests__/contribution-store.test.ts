@@ -1,13 +1,20 @@
 import { describe, it, expect } from "vitest";
 import {
-  getYearDays,
-  getContributionColor,
+  CONTRIBUTION_COLORS,
   formatDate,
   formatDateDisplay,
+  getContributionColor,
+  getYearDays,
   isContributionDateInYear,
   sanitizeContributionMap,
-  CONTRIBUTION_COLORS,
-} from "../contribution-store";
+} from "../../features/contributions";
+import {
+  commitContributionHistory,
+  createContributionHistory,
+  getCurrentContributionSnapshot,
+  redoContributionHistory,
+  undoContributionHistory,
+} from "../../features/contributions/history";
 
 describe("getYearDays", () => {
   it("should return days for a given year", () => {
@@ -124,5 +131,35 @@ describe("sanitizeContributionMap", () => {
   it("returns an empty map for malformed persisted values", () => {
     expect(sanitizeContributionMap(null, 2026)).toEqual({});
     expect(sanitizeContributionMap(["2026-01-01"], 2026)).toEqual({});
+  });
+});
+
+describe("contribution history", () => {
+  it("records committed snapshots and discards the redo branch after a new edit", () => {
+    const initialHistory = createContributionHistory();
+    const firstCommit = commitContributionHistory(initialHistory, {
+      "2026-01-01": 3,
+    });
+    const secondCommit = commitContributionHistory(firstCommit, {
+      "2026-01-01": 3,
+      "2026-01-02": 6,
+    });
+
+    const undoneHistory = undoContributionHistory(secondCommit);
+    expect(undoneHistory).not.toBeNull();
+    expect(getCurrentContributionSnapshot(undoneHistory!)).toEqual({
+      "2026-01-01": 3,
+    });
+
+    const replacementCommit = commitContributionHistory(undoneHistory!, {
+      "2026-01-03": 9,
+    });
+    expect(redoContributionHistory(replacementCommit)).toBeNull();
+    expect(replacementCommit.snapshots).toHaveLength(3);
+  });
+
+  it("does not create duplicate history entries for identical snapshots", () => {
+    const history = createContributionHistory({ "2026-01-01": 1 });
+    expect(commitContributionHistory(history, { "2026-01-01": 1 })).toBe(history);
   });
 });

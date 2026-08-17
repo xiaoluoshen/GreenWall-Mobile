@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ContributionDay } from "../contribution-store";
-import { createPatternStamp, parsePendingPattern } from "../pattern-stamp";
+import type { ContributionDay } from "../../features/contributions";
+import { parsePendingPattern } from "../../features/patterns/pending-pattern";
+import { createPatternStamp } from "../pattern-stamp";
 
 const days: ContributionDay[] = Array.from({ length: 21 }, (_, index) => {
   const week = Math.floor(index / 7);

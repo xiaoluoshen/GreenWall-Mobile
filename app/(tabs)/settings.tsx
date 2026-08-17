@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-  Alert,
   ActivityIndicator,
-  StyleSheet,
+  Alert,
   Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Constants from "expo-constants";
@@ -21,59 +21,41 @@ import {
   MaterialListItem,
   MaterialSectionLabel,
 } from "@/components/material-ui";
+import { useGitHubSession } from "@/features/settings/hooks/use-github-session";
 import { useI18n } from "@/lib/i18n";
-import {
-  getSavedToken,
-  getSavedUser,
-  saveToken,
-  clearToken,
-  validateToken,
-  type GitHubUser,
-} from "@/lib/github-api";
+
+const ORIGINAL_PROJECT_URL = "https://github.com/zmrlft/GreenWall";
+const MOBILE_PROJECT_URL = "https://github.com/xiaoluoshen/GreenWall-Mobile";
+const COMMUNITY_URL = "https://t.me/lsposed0";
 
 export default function SettingsScreen() {
   const colors = useColors();
   const { t, language, setLanguage } = useI18n();
-
-  const [token, setToken] = useState("");
-  const [user, setUser] = useState<GitHubUser | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [showToken, setShowToken] = useState(false);
-  const appVersion = Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? "1.3.1";
-
-  useEffect(() => {
-    loadSavedData();
-  }, []);
-
-  const loadSavedData = async () => {
-    const savedUser = await getSavedUser();
-    const savedToken = await getSavedToken();
-    if (savedUser) setUser(savedUser);
-    if (savedToken) setToken(savedToken);
-  };
+  const {
+    token,
+    setToken,
+    user,
+    isLoading,
+    isSubmitting,
+    isTokenVisible,
+    toggleTokenVisibility,
+    login,
+    logout,
+  } = useGitHubSession();
+  const appVersion =
+    Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? "—";
 
   const handleLogin = useCallback(async () => {
-    if (!token.trim()) return;
-    setLoading(true);
-
-    const validatedUser = await validateToken(token.trim());
-    if (validatedUser) {
-      await saveToken(token.trim());
-      setUser(validatedUser);
-      Alert.alert(t.common.success, t.settings.loginSuccess);
-    } else {
-      Alert.alert(t.common.error, t.settings.loginError);
-    }
-
-    setLoading(false);
-  }, [token, t]);
+    const didLogIn = await login();
+    Alert.alert(
+      didLogIn ? t.common.success : t.common.error,
+      didLogIn ? t.settings.loginSuccess : t.settings.loginError,
+    );
+  }, [login, t]);
 
   const handleLogout = useCallback(async () => {
-    await clearToken();
-    setUser(null);
-    setToken("");
-    setShowToken(false);
-  }, []);
+    await logout();
+  }, [logout]);
 
   const toggleLanguage = useCallback(() => {
     setLanguage(language === "en" ? "zh" : "en");
@@ -82,109 +64,36 @@ export default function SettingsScreen() {
   return (
     <ScreenContainer>
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        style={styles.screen}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title */}
-        <MaterialLargeTitle style={{ marginTop: 8 }}>{t.settings.title}</MaterialLargeTitle>
+        <MaterialLargeTitle style={styles.title}>{t.settings.title}</MaterialLargeTitle>
 
-        {/* Account Section */}
         <MaterialSectionLabel>{t.settings.account}</MaterialSectionLabel>
-        <MaterialCard style={{ padding: 0 }}>
-          {user ? (
-            <>
-              <MaterialListItem
-                title={user.name || user.login}
-                subtitle={`${t.settings.loggedInAs} @${user.login}`}
-                showArrow={false}
-                leftIcon={
-                  <MaterialIcons
-                    name="account-circle"
-                    size={24}
-                    color={colors.primary}
-                  />
-                }
-              />
-              <MaterialDivider style={{ marginHorizontal: 0 }} />
-              <View style={{ padding: 16 }}>
-                <MaterialButton
-                  title={t.settings.logout}
-                  variant="secondary"
-                  onPress={handleLogout}
-                />
-              </View>
-            </>
+        <MaterialCard style={styles.flushCard}>
+          {isLoading ? (
+            <ActivityIndicator color={colors.primary} style={styles.loading} />
+          ) : user ? (
+            <LoggedInAccount
+              displayName={user.name || user.login}
+              login={user.login}
+              onLogout={handleLogout}
+            />
           ) : (
-            <>
-              <MaterialListItem
-                title={t.settings.notLoggedIn}
-                subtitle={t.settings.tokenHint}
-                showArrow={false}
-                leftIcon={
-                  <MaterialIcons
-                    name="account-circle"
-                    size={24}
-                    color={colors.muted}
-                  />
-                }
-              />
-              <MaterialDivider style={{ marginHorizontal: 0 }} />
-              <View style={{ padding: 16 }}>
-                <Text
-                  style={[styles.inputLabel, { color: colors.muted }]}
-                >
-                  {t.settings.tokenLabel}
-                </Text>
-                <TextInput
-                  value={token}
-                  onChangeText={setToken}
-                  placeholder={t.settings.tokenPlaceholder}
-                  placeholderTextColor={colors.muted}
-                  secureTextEntry={!showToken}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  returnKeyType="done"
-                  onSubmitEditing={handleLogin}
-                  style={[
-                    styles.tokenInput,
-                    {
-                      color: colors.foreground,
-                      backgroundColor: colors.background,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                />
-                <View style={styles.tokenActions}>
-                  <MaterialButton
-                    title={showToken ? t.settings.hideToken : t.settings.showToken}
-                    variant="text"
-                    compact
-                    onPress={() => setShowToken(!showToken)}
-                  />
-                </View>
-                {loading ? (
-                  <ActivityIndicator
-                    color={colors.primary}
-                    style={{ marginTop: 12 }}
-                  />
-                ) : (
-                  <MaterialButton
-                    title={t.settings.login}
-                    variant="primary"
-                    onPress={handleLogin}
-                    disabled={!token.trim()}
-                    style={{ marginTop: 12 }}
-                  />
-                )}
-              </View>
-            </>
+            <LoginForm
+              token={token}
+              isTokenVisible={isTokenVisible}
+              isSubmitting={isSubmitting}
+              onTokenChange={setToken}
+              onToggleTokenVisibility={toggleTokenVisibility}
+              onLogin={handleLogin}
+            />
           )}
         </MaterialCard>
 
-        {/* Preferences */}
         <MaterialSectionLabel>{t.settings.language}</MaterialSectionLabel>
-        <MaterialCard style={{ padding: 0 }}>
+        <MaterialCard style={styles.flushCard}>
           <MaterialListItem
             title={t.settings.language}
             rightText={language === "en" ? "English" : "中文"}
@@ -192,71 +101,40 @@ export default function SettingsScreen() {
           />
         </MaterialCard>
 
-        {/* About */}
         <MaterialSectionLabel>{t.settings.about}</MaterialSectionLabel>
-        <MaterialCard style={{ padding: 0 }}>
+        <MaterialCard style={styles.flushCard}>
           <MaterialListItem
             title={t.settings.version}
             rightText={appVersion}
             showArrow={false}
           />
-          <MaterialDivider style={{ marginHorizontal: 0 }} />
-          <MaterialListItem
+          <MaterialDivider style={styles.flushDivider} />
+          <ExternalLinkItem
             title={t.settings.github}
-            rightText="zmrlft/GreenWall"
-            onPress={() =>
-              Linking.openURL("https://github.com/zmrlft/GreenWall")
-            }
-            leftIcon={
-              <MaterialIcons
-                name="code"
-                size={24}
-                color={colors.muted}
-              />
-            }
+            label="zmrlft/GreenWall"
+            url={ORIGINAL_PROJECT_URL}
+            icon="code"
           />
-          <MaterialDivider style={{ marginHorizontal: 0 }} />
-          <MaterialListItem
+          <MaterialDivider style={styles.flushDivider} />
+          <ExternalLinkItem
             title={t.settings.myRepos}
-            rightText="xiaoluoshen/GreenWall-Mobile"
-            onPress={() =>
-              Linking.openURL("https://github.com/xiaoluoshen/GreenWall-Mobile")
-            }
-            leftIcon={
-              <MaterialIcons
-                name="folder"
-                size={24}
-                color={colors.muted}
-              />
-            }
+            label="xiaoluoshen/GreenWall-Mobile"
+            url={MOBILE_PROJECT_URL}
+            icon="folder"
           />
-          <MaterialDivider style={{ marginHorizontal: 0 }} />
-          <MaterialListItem
+          <MaterialDivider style={styles.flushDivider} />
+          <ExternalLinkItem
             title={t.settings.telegram}
-            rightText="@lsposed0"
-            onPress={() =>
-              Linking.openURL("https://t.me/lsposed0")
-            }
-            leftIcon={
-              <MaterialIcons
-                name="send"
-                size={24}
-                color={colors.muted}
-              />
-            }
+            label="@lsposed0"
+            url={COMMUNITY_URL}
+            icon="send"
           />
-          <MaterialDivider style={{ marginHorizontal: 0 }} />
+          <MaterialDivider style={styles.flushDivider} />
           <MaterialListItem
             title={t.settings.greenWallMobile}
             subtitle={t.settings.aboutSubtitle}
             showArrow={false}
-            leftIcon={
-              <MaterialIcons
-                name="eco"
-                size={24}
-                color={colors.primary}
-              />
-            }
+            leftIcon={<MaterialIcons name="eco" size={24} color={colors.primary} />}
           />
         </MaterialCard>
       </ScrollView>
@@ -264,7 +142,161 @@ export default function SettingsScreen() {
   );
 }
 
+function LoggedInAccount({
+  displayName,
+  login,
+  onLogout,
+}: {
+  displayName: string;
+  login: string;
+  onLogout: () => void;
+}) {
+  const colors = useColors();
+  const { t } = useI18n();
+
+  return (
+    <>
+      <MaterialListItem
+        title={displayName}
+        subtitle={`${t.settings.loggedInAs} @${login}`}
+        showArrow={false}
+        leftIcon={<MaterialIcons name="account-circle" size={24} color={colors.primary} />}
+      />
+      <MaterialDivider style={styles.flushDivider} />
+      <View style={styles.accountAction}>
+        <MaterialButton title={t.settings.logout} variant="secondary" onPress={onLogout} />
+      </View>
+    </>
+  );
+}
+
+function LoginForm({
+  token,
+  isTokenVisible,
+  isSubmitting,
+  onTokenChange,
+  onToggleTokenVisibility,
+  onLogin,
+}: {
+  token: string;
+  isTokenVisible: boolean;
+  isSubmitting: boolean;
+  onTokenChange: (value: string) => void;
+  onToggleTokenVisibility: () => void;
+  onLogin: () => void;
+}) {
+  const colors = useColors();
+  const { t } = useI18n();
+
+  return (
+    <>
+      <MaterialListItem
+        title={t.settings.notLoggedIn}
+        subtitle={t.settings.tokenHint}
+        showArrow={false}
+        leftIcon={<MaterialIcons name="account-circle" size={24} color={colors.muted} />}
+      />
+      <MaterialDivider style={styles.flushDivider} />
+      <View style={styles.form}>
+        <Text style={[styles.inputLabel, { color: colors.muted }]}>
+          {t.settings.tokenLabel}
+        </Text>
+        <TextInput
+          value={token}
+          onChangeText={onTokenChange}
+          placeholder={t.settings.tokenPlaceholder}
+          placeholderTextColor={colors.muted}
+          secureTextEntry={!isTokenVisible}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="done"
+          onSubmitEditing={onLogin}
+          editable={!isSubmitting}
+          style={[
+            styles.tokenInput,
+            {
+              color: colors.foreground,
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+            },
+          ]}
+        />
+        <View style={styles.tokenActions}>
+          <MaterialButton
+            title={isTokenVisible ? t.settings.hideToken : t.settings.showToken}
+            variant="text"
+            compact
+            onPress={onToggleTokenVisibility}
+          />
+        </View>
+        {isSubmitting ? (
+          <ActivityIndicator color={colors.primary} style={styles.submitLoading} />
+        ) : (
+          <MaterialButton
+            title={t.settings.login}
+            variant="primary"
+            onPress={onLogin}
+            disabled={!token.trim()}
+            style={styles.loginButton}
+          />
+        )}
+      </View>
+    </>
+  );
+}
+
+function ExternalLinkItem({
+  title,
+  label,
+  url,
+  icon,
+}: {
+  title: string;
+  label: string;
+  url: string;
+  icon: React.ComponentProps<typeof MaterialIcons>["name"];
+}) {
+  const colors = useColors();
+
+  const openExternalUrl = useCallback(() => {
+    void Linking.openURL(url);
+  }, [url]);
+
+  return (
+    <MaterialListItem
+      title={title}
+      rightText={label}
+      onPress={openExternalUrl}
+      leftIcon={<MaterialIcons name={icon} size={24} color={colors.muted} />}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  content: {
+    paddingBottom: 100,
+  },
+  title: {
+    marginTop: 8,
+  },
+  flushCard: {
+    padding: 0,
+  },
+  flushDivider: {
+    marginHorizontal: 0,
+  },
+  loading: {
+    marginVertical: 32,
+  },
+  accountAction: {
+    padding: 16,
+  },
+  form: {
+    padding: 16,
+  },
   inputLabel: {
     fontSize: 13,
     fontWeight: "500",
@@ -282,5 +314,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     marginTop: 4,
+  },
+  submitLoading: {
+    marginTop: 12,
+  },
+  loginButton: {
+    marginTop: 12,
   },
 });

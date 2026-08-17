@@ -1,28 +1,5 @@
 import type { CharacterPattern } from "./character-patterns";
-import type { ContributionDay, ContributionLevel } from "./contribution-store";
-
-export const PENDING_PATTERN_KEY = "greenwall_pending_pattern";
-
-export type PendingPattern = {
-  char: string;
-  pattern: CharacterPattern;
-};
-
-/**
- * Parses a pattern payload persisted by the character picker.
- * Invalid or malformed data is ignored instead of reaching the drawing store.
- */
-export function parsePendingPattern(value: string | null): PendingPattern | null {
-  if (!value) return null;
-
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (!isPendingPattern(parsed)) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
+import type { ContributionDay, ContributionLevel } from "../features/contributions";
 
 /**
  * Converts a seven-row character matrix into a single undoable contribution update.
@@ -53,13 +30,6 @@ export function createPatternStamp(
   }
 
   return cells;
-}
-
-function isPendingPattern(value: unknown): value is PendingPattern {
-  if (!value || typeof value !== "object") return false;
-
-  const candidate = value as Record<string, unknown>;
-  return typeof candidate.char === "string" && isCharacterPattern(candidate.pattern);
 }
 
 function isCharacterPattern(value: unknown): value is CharacterPattern {

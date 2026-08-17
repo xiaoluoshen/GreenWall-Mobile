@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,9 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  Modal,
-  TextInput,
-  ActivityIndicator,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
@@ -23,28 +20,22 @@ import {
   MaterialCard,
   MaterialLargeTitle,
   MaterialSegmentedControl,
-  MaterialSwitch,
 } from "@/components/material-ui";
 import {
   useContributionStore,
   getYearDays,
   type ContributionLevel,
   getContributionColor,
-} from "@/lib/contribution-store";
+} from "@/features/contributions";
 import { useI18n, interpolate } from "@/lib/i18n";
 import {
+  createRepository,
   getSavedToken,
   getSavedUser,
-  createRepository,
-  pushContributions,
-} from "@/lib/github-api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "expo-router";
-import {
-  createPatternStamp,
-  parsePendingPattern,
-  PENDING_PATTERN_KEY,
-} from "@/lib/pattern-stamp";
+  publishContributions,
+} from "@/features/github";
+import { RepositoryPublishModal } from "@/features/canvas/components/repository-publish-modal";
+import { usePendingPatternStamp } from "@/features/canvas/hooks/use-pending-pattern-stamp";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR - i);
@@ -82,7 +73,6 @@ export default function CanvasScreen() {
   const [repoPrivate, setRepoPrivate] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const processedPatternRef = useRef<string | null>(null);
 
   useEffect(() => {
     void load();
@@ -90,42 +80,11 @@ export default function CanvasScreen() {
 
   const days = useMemo(() => getYearDays(year), [year]);
 
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-
-      const applyPendingPattern = async () => {
-        if (!loaded) return;
-
-        const serializedPattern = await AsyncStorage.getItem(PENDING_PATTERN_KEY);
-        if (!active) return;
-        if (!serializedPattern) {
-          processedPatternRef.current = null;
-          return;
-        }
-        if (processedPatternRef.current === serializedPattern) return;
-
-        const pendingPattern = parsePendingPattern(serializedPattern);
-        if (!pendingPattern) {
-          processedPatternRef.current = serializedPattern;
-          await AsyncStorage.removeItem(PENDING_PATTERN_KEY);
-          return;
-        }
-
-        const cells = createPatternStamp(days, pendingPattern.pattern);
-        if (Object.keys(cells).length === 0) return;
-
-        processedPatternRef.current = serializedPattern;
-        commitBatch(cells);
-        await AsyncStorage.removeItem(PENDING_PATTERN_KEY);
-      };
-
-      void applyPendingPattern();
-      return () => {
-        active = false;
-      };
-    }, [days, commitBatch, loaded]),
-  );
+  usePendingPatternStamp({
+    days,
+    isReady: loaded,
+    commitBatch,
+  });
 
   const handleCellChange = useCallback(
     (date: string, count: number) => {
@@ -185,7 +144,7 @@ export default function CanvasScreen() {
       const commits = Object.entries(contributions)
         .filter(([_, count]) => count > 0)
         .map(([date, count]) => ({ date, count }));
-      const pushResult = await pushContributions(
+      const pushResult = await publishContributions(
         token,
         user.login,
         repoName,
@@ -395,99 +354,19 @@ export default function CanvasScreen() {
         </View>
       </ScrollView>
 
-      {/* Create Repo Modal */}
-      <Modal
+      <RepositoryPublishModal
         visible={showRepoModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => !generating && setShowRepoModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View
-            style={[styles.modalContent, { backgroundColor: colors.surface }]}
-          >
-            <Text style={[styles.modalTitle, { color: colors.foreground }]}>
-              {t.repo.title}
-            </Text>
-
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>
-              {t.repo.name}
-            </Text>
-            <TextInput
-              value={repoName}
-              onChangeText={setRepoName}
-              placeholder={t.repo.namePlaceholder}
-              placeholderTextColor={colors.muted}
-              style={[
-                styles.input,
-                {
-                  color: colors.foreground,
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                },
-              ]}
-              editable={!generating}
-            />
-
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>
-              {t.repo.description}
-            </Text>
-            <TextInput
-              value={repoDesc}
-              onChangeText={setRepoDesc}
-              placeholder={t.repo.descriptionPlaceholder}
-              placeholderTextColor={colors.muted}
-              style={[
-                styles.input,
-                {
-                  color: colors.foreground,
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                },
-              ]}
-              editable={!generating}
-            />
-
-            <View style={styles.switchRow}>
-              <Text style={[styles.switchLabel, { color: colors.foreground }]}>
-                {repoPrivate ? t.repo.private : t.repo.public}
-              </Text>
-              <MaterialSwitch
-                value={repoPrivate}
-                onValueChange={setRepoPrivate}
-              />
-            </View>
-
-            {generating && (
-              <View style={styles.progressRow}>
-                <ActivityIndicator color={colors.primary} />
-                <Text style={[styles.progressText, { color: colors.muted }]}>
-                  {t.repo.generating}{" "}
-                  {progress.total > 0 &&
-                    `(${progress.current}/${progress.total})`}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.modalButtons}>
-              <MaterialButton
-                title={t.repo.cancel}
-                variant="secondary"
-                onPress={() => setShowRepoModal(false)}
-                disabled={generating}
-                style={{ flex: 1, marginRight: 8 }}
-              />
-              <MaterialButton
-                title={t.repo.confirm}
-                variant="primary"
-                onPress={handleGenerateAndPush}
-                disabled={generating || !repoName.trim()}
-                style={{ flex: 1, marginLeft: 8 }}
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+        repositoryName={repoName}
+        description={repoDesc}
+        isPrivate={repoPrivate}
+        isSubmitting={generating}
+        progress={progress}
+        onRepositoryNameChange={setRepoName}
+        onDescriptionChange={setRepoDesc}
+        onPrivacyChange={setRepoPrivate}
+        onCancel={() => setShowRepoModal(false)}
+        onSubmit={handleGenerateAndPush}
+      />
     </ScreenContainer>
   );
 }
@@ -558,60 +437,5 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 13,
     fontWeight: "500",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  modalContent: {
-    width: "100%",
-    maxWidth: 420,
-    borderRadius: 20,
-    padding: 28,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 16,
-  },
-  switchLabel: {
-    fontSize: 16,
-  },
-  progressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 16,
-  },
-  progressText: {
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  modalButtons: {
-    flexDirection: "row",
-    marginTop: 28,
-    gap: 12,
   },
 });

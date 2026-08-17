@@ -9,7 +9,7 @@ import {
   isContributionDateInYear,
   type ContributionMap,
   type ContributionLevel,
-} from "@/lib/contribution-store";
+} from "@/features/contributions";
 import { useI18n } from "@/lib/i18n";
 
 const CELL_SIZE = 14;

@@ -16,11 +16,10 @@ import {
   MaterialSegmentedControl,
 } from "@/components/material-ui";
 import { ALL_PATTERNS, type PatternCategory } from "@/lib/character-patterns";
-import { getContributionColor } from "@/lib/contribution-store";
+import { getContributionColor } from "@/features/contributions";
 import { useI18n } from "@/lib/i18n";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { savePendingPattern } from "@/features/patterns/pending-pattern";
 import { router } from "expo-router";
-import { PENDING_PATTERN_KEY } from "@/lib/pattern-stamp";
 
 const CATEGORIES: PatternCategory[] = [
   "uppercase",
@@ -59,14 +58,10 @@ export default function CharactersScreen() {
   const handlePlaceOnCanvas = useCallback(async () => {
     if (!selectedChar || !selectedPattern) return;
 
-    // Store the pattern in AsyncStorage for the canvas to pick up
-    await AsyncStorage.setItem(
-      PENDING_PATTERN_KEY,
-      JSON.stringify({
-        char: selectedChar,
-        pattern: selectedPattern,
-      })
-    );
+    await savePendingPattern({
+      char: selectedChar,
+      pattern: selectedPattern,
+    });
 
     router.navigate("/(tabs)");
   }, [selectedChar, selectedPattern]);
