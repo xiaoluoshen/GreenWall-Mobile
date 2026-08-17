@@ -107,6 +107,15 @@ class CanvasViewModel(
         commit(contributions)
     }
 
+    fun generateRandomActiveContributions() {
+        val currentState = _state.value
+        val contributions = ContributionDomain.createRandomActive(
+            days = ContributionDomain.getYearDays(currentState.year),
+            year = currentState.year,
+        )
+        commit(contributions)
+    }
+
     fun reset() {
         commit(emptyMap())
     }

@@ -71,4 +71,37 @@ class ContributionDomainTest {
             result,
         )
     }
+
+    @Test
+    fun `random active generator uses valid low contributions through today`() {
+        val days = ContributionDomain.getYearDays(2026)
+        val result = ContributionDomain.createRandomActive(
+            days = days,
+            year = 2026,
+            today = LocalDate.of(2026, 1, 3),
+            randomValue = { 0.0 },
+        )
+
+        assertEquals(
+            mapOf(
+                "2026-01-01" to ContributionLevel.Low.value,
+                "2026-01-02" to ContributionLevel.Low.value,
+                "2026-01-03" to ContributionLevel.Low.value,
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `random active generator can produce no contributions`() {
+        val days = ContributionDomain.getYearDays(2026)
+        val result = ContributionDomain.createRandomActive(
+            days = days,
+            year = 2026,
+            today = LocalDate.of(2026, 1, 3),
+            randomValue = { 1.0 },
+        )
+
+        assertTrue(result.isEmpty())
+    }
 }

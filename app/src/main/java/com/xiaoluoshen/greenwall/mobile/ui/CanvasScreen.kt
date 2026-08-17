@@ -34,6 +34,7 @@ fun CanvasScreen(
     onLevelSelected: (ContributionLevel) -> Unit,
     onCellsApplied: (Map<String, Int>) -> Unit,
     onFillAll: () -> Unit,
+    onGenerateRandomActive: () -> Unit,
     onReset: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
@@ -99,6 +100,7 @@ fun CanvasScreen(
             onEraserChanged = onEraserChanged,
             onLevelSelected = onLevelSelected,
             onFillAll = onFillAll,
+            onGenerateRandomActive = onGenerateRandomActive,
             onReset = onReset,
             onUndo = onUndo,
             onRedo = onRedo,
@@ -143,6 +145,7 @@ private fun CanvasControls(
     onEraserChanged: (Boolean) -> Unit,
     onLevelSelected: (ContributionLevel) -> Unit,
     onFillAll: () -> Unit,
+    onGenerateRandomActive: () -> Unit,
     onReset: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
@@ -203,28 +206,41 @@ private fun CanvasControls(
                 modifier = Modifier.weight(1f),
             )
             TextButton(
+                text = "随机活跃",
+                onClick = onGenerateRandomActive,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Text(
+            text = "随机活跃会生成更接近日常节奏的贡献分布",
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            style = MiuixTheme.textStyles.footnote1,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(ControlSpacing),
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            TextButton(
                 text = "重置",
                 onClick = onReset,
                 modifier = Modifier.weight(1f),
             )
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(ControlSpacing),
-            modifier = Modifier.padding(top = ControlSpacing),
-        ) {
             TextButton(
                 text = "撤销",
                 onClick = onUndo,
                 enabled = state.canUndo,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(
-                text = "重做",
-                onClick = onRedo,
-                enabled = state.canRedo,
-                modifier = Modifier.weight(1f),
-            )
         }
+        TextButton(
+            text = "重做",
+            onClick = onRedo,
+            enabled = state.canRedo,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = ControlSpacing),
+        )
     }
 }
 

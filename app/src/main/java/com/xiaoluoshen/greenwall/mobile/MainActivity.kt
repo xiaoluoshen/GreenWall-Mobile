@@ -109,6 +109,7 @@ private fun GreenWallApp(
                     onLevelSelected = canvasViewModel::selectLevel,
                     onCellsApplied = canvasViewModel::applyUpdates,
                     onFillAll = canvasViewModel::fillAllPastDays,
+                    onGenerateRandomActive = canvasViewModel::generateRandomActiveContributions,
                     onReset = canvasViewModel::reset,
                     onUndo = canvasViewModel::undo,
                     onRedo = canvasViewModel::redo,
