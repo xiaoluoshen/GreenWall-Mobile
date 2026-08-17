@@ -1,8 +1,8 @@
 package com.xiaoluoshen.greenwall.mobile.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,12 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
@@ -139,33 +141,19 @@ private fun HeatmapGrid(
     val cellStepPx = with(density) { cellStep.toPx() }
     val cellSizePx = with(density) { cellSize.toPx() }
     val cornerRadiusPx = with(density) { 4.dp.toPx() }
-    val cellColors = remember(contributions, emptyColor, cellsByPosition) {
-        buildMap {
-            cellsByPosition.forEach { (position, day) ->
-                put(position, contributionColor(contributions[ContributionDomain.formatDate(day.date)] ?: 0, emptyColor))
-            }
-        }
+    val strokeUpdates = remember(year, selectedValue) { mutableStateMapOf<String, Int>() }
+    val cellColors = cellsByPosition.mapValues { (_, day) ->
+        val date = ContributionDomain.formatDate(day.date)
+        val value = strokeUpdates[date] ?: contributions[date] ?: 0
+        contributionColor(value, emptyColor)
     }
 
     val gestureModifier = if (isEditMode) {
-        Modifier
-            .pointerInput(year, selectedValue, cellsByPosition) {
-                detectTapGestures { offset ->
-                    dateAt(
-                        offset = offset,
-                        cellStepPx = cellStepPx,
-                        cellSizePx = cellSizePx,
-                        maxWeek = maxWeek,
-                        cellsByPosition = cellsByPosition,
-                        year = year,
-                    )?.let { date ->
-                        onCellsApplied(mapOf(date to selectedValue))
-                    }
-                }
-            }
-            .pointerInput(year, selectedValue, cellsByPosition) {
-                val touchedCells = linkedMapOf<String, Int>()
-                var previousPosition: Offset? = null
+        Modifier.pointerInput(year, selectedValue, cellsByPosition) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                val stroke = linkedMapOf<String, Int>()
+                var previousPosition = down.position
 
                 fun recordCell(offset: Offset) {
                     dateAt(
@@ -176,7 +164,8 @@ private fun HeatmapGrid(
                         cellsByPosition = cellsByPosition,
                         year = year,
                     )?.let { date ->
-                        touchedCells[date] = selectedValue
+                        stroke[date] = selectedValue
+                        strokeUpdates[date] = selectedValue
                     }
                 }
 
@@ -189,33 +178,26 @@ private fun HeatmapGrid(
                     }
                 }
 
-                fun applyTouchedCells() {
-                    if (touchedCells.isNotEmpty()) {
-                        onCellsApplied(touchedCells.toMap())
-                        touchedCells.clear()
-                    }
-                }
+                recordCell(down.position)
 
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        previousPosition = offset
-                        recordCell(offset)
-                    },
-                    onDrag = { change, _ ->
-                        previousPosition?.let { from -> recordPath(from, change.position) } ?: recordCell(change.position)
+                while (true) {
+                    val event = awaitPointerEvent()
+                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                    if (change.pressed) {
+                        recordPath(previousPosition, change.position)
                         previousPosition = change.position
                         change.consume()
-                    },
-                    onDragEnd = {
-                        applyTouchedCells()
-                        previousPosition = null
-                    },
-                    onDragCancel = {
-                        applyTouchedCells()
-                        previousPosition = null
-                    },
-                )
+                    }
+                    if (change.changedToUp()) {
+                        if (stroke.isNotEmpty()) {
+                            onCellsApplied(stroke.toMap())
+                        }
+                        strokeUpdates.clear()
+                        break
+                    }
+                }
             }
+        }
     } else {
         Modifier
     }
@@ -227,7 +209,7 @@ private fun HeatmapGrid(
             .clipToBounds()
             .semantics {
                 contentDescription = if (isEditMode) {
-                    "编辑模式。轻触修改单格，直接拖动可连续绘制"
+                    "实时编辑模式。手指按下立即显示，拖动时持续绘制，抬手后保存整条笔触"
                 } else {
                     "浏览模式。左右滑动可浏览全年日期"
                 }
