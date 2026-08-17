@@ -3,6 +3,7 @@ package com.xiaoluoshen.greenwall.mobile
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Brush
@@ -39,6 +40,7 @@ private const val SETTINGS_ROUTE = "settings"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             GreenWallTheme {
                 GreenWallApp(

@@ -1,6 +1,7 @@
 package com.xiaoluoshen.greenwall.mobile.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -52,15 +54,27 @@ fun CharactersScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 20.dp),
     ) {
-        Text(
-            text = "字符",
-            style = MiuixTheme.textStyles.headline1,
-            modifier = Modifier.padding(vertical = 16.dp),
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "字符",
+                style = MiuixTheme.textStyles.headline1,
+            )
+            Text(
+                text = "选择一个字符图案，再应用到当前贡献画布",
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                style = MiuixTheme.textStyles.body2,
+            )
+        }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                .horizontalScroll(rememberScrollState()),
+        ) {
             categoryTitles.forEach { (key, title) ->
                 TextButton(
                     text = title,
@@ -74,9 +88,16 @@ fun CharactersScreen(
             }
         }
 
+        Text(
+            text = "轻触卡片选择图案",
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            style = MiuixTheme.textStyles.footnote1,
+            modifier = Modifier.padding(top = 12.dp),
+        )
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
-            contentPadding = PaddingValues(vertical = 16.dp),
+            contentPadding = PaddingValues(top = 12.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.weight(1f),
@@ -93,19 +114,23 @@ fun CharactersScreen(
 
         if (selectedPattern != null) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                modifier = Modifier.fillMaxWidth(),
                 insideMargin = PaddingValues(16.dp),
             ) {
                 Text(
-                    text = "预览：$selectedCharacter",
+                    text = "已选择：$selectedCharacter",
                     style = MiuixTheme.textStyles.title2,
+                )
+                Text(
+                    text = "确认后将覆盖到画布中的对应日期格",
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    style = MiuixTheme.textStyles.body2,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
                 PatternPreview(
                     pattern = selectedPattern,
                     cellSize = 12.dp,
-                    modifier = Modifier.padding(top = 12.dp),
+                    modifier = Modifier.padding(top = 14.dp),
                 )
                 TextButton(
                     text = "应用到画布",
@@ -140,7 +165,7 @@ private fun CharacterTile(
 
     Card(
         modifier = Modifier
-            .height(84.dp)
+            .height(88.dp)
             .fillMaxWidth(),
         insideMargin = PaddingValues(8.dp),
         colors = CardDefaults.defaultColors(color = cardColor),
@@ -148,6 +173,7 @@ private fun CharacterTile(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth(),
         ) {
             PatternPreview(pattern = pattern, cellSize = 4.dp)
@@ -155,7 +181,7 @@ private fun CharacterTile(
                 text = character,
                 color = contentColor,
                 fontSize = 15.sp,
-                modifier = Modifier.padding(top = 4.dp),
+                modifier = Modifier.padding(top = 6.dp),
             )
         }
     }
