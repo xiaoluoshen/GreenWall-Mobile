@@ -217,7 +217,7 @@ fun SettingsScreen(
         }
 
         Text(
-            text = "GreenWall Mobile 2.3.0 · Kotlin + Jetpack Compose + MIUIX",
+            text = "GreenWall Mobile 2.4.0 · Kotlin + Jetpack Compose + MIUIX",
             style = MiuixTheme.textStyles.footnote1,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )

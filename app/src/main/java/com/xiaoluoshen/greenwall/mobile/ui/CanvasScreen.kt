@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.xiaoluoshen.greenwall.mobile.domain.ContributionDomain
@@ -40,6 +44,7 @@ fun CanvasScreen(
     onRedo: () -> Unit,
 ) {
     val years = (0..9).map { Year.now().value - it }
+    var isEditMode by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -71,6 +76,38 @@ fun CanvasScreen(
 
         Card(
             modifier = Modifier.fillMaxWidth(),
+            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            Text("操作模式", style = MiuixTheme.textStyles.title3)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(ControlSpacing),
+                modifier = Modifier.padding(top = 8.dp),
+            ) {
+                SelectionButton(
+                    text = "浏览",
+                    isSelected = !isEditMode,
+                    onClick = { isEditMode = false },
+                )
+                SelectionButton(
+                    text = "编辑",
+                    isSelected = isEditMode,
+                    onClick = { isEditMode = true },
+                )
+            }
+            Text(
+                text = if (isEditMode) {
+                    "编辑模式：轻触单格，直接拖动连续绘制"
+                } else {
+                    "浏览模式：左右滑动可查看全年，再切换编辑"
+                },
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                style = MiuixTheme.textStyles.body2,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
             insideMargin = PaddingValues(12.dp),
         ) {
             Text(
@@ -90,6 +127,7 @@ fun CanvasScreen(
                     year = state.year,
                     contributions = state.contributions,
                     selectedValue = if (state.isEraserActive) 0 else state.selectedLevel.value,
+                    isEditMode = isEditMode,
                     onCellsApplied = onCellsApplied,
                 )
             }
@@ -132,7 +170,7 @@ private fun CanvasHeader() {
             style = MiuixTheme.textStyles.headline1,
         )
         Text(
-            text = "选择颜色强度后，轻触单格或长按拖动即可绘制",
+            text = "先左右滑动浏览日期，再切换编辑模式进行绘制",
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             style = MiuixTheme.textStyles.body2,
         )
@@ -156,7 +194,7 @@ private fun CanvasControls(
     ) {
         Text("绘制工具", style = MiuixTheme.textStyles.title2)
         Text(
-            text = "连续拖动会合并为一次操作，可随时撤销或重做",
+            text = "切换到编辑模式后可直接拖动，整次绘制会合并为一次操作",
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             style = MiuixTheme.textStyles.body2,
             modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),

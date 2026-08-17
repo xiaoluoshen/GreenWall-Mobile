@@ -1,7 +1,7 @@
 package com.xiaoluoshen.greenwall.mobile.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -36,17 +36,18 @@ import kotlin.math.ceil
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private val cellSize = 14.dp
+private val cellSize = 18.dp
 private val cellGap = 3.dp
-private val labelWidth = 28.dp
+private val labelWidth = 26.dp
 private val monthLabelHeight = 24.dp
 
 @Composable
 fun ContributionCalendar(
     year: Int,
     contributions: ContributionMap,
-    onCellsApplied: (Map<String, Int>) -> Unit,
     selectedValue: Int,
+    isEditMode: Boolean,
+    onCellsApplied: (Map<String, Int>) -> Unit,
 ) {
     val days = remember(year) { ContributionDomain.getYearDays(year) }
     val maxWeek = remember(days) { days.maxOf { it.week } }
@@ -57,7 +58,6 @@ fun ContributionCalendar(
             .mapValues { (_, monthDays) -> monthDays.minOf { it.week } }
     }
     val scrollState = rememberScrollState()
-    val colorScheme = MiuixTheme.colorScheme
 
     Column {
         Row {
@@ -65,7 +65,12 @@ fun ContributionCalendar(
                 Spacer(modifier = Modifier.height(monthLabelHeight))
                 WeekdayLabels()
             }
-            Column(modifier = Modifier.horizontalScroll(scrollState)) {
+            Column(
+                modifier = Modifier.horizontalScroll(
+                    state = scrollState,
+                    enabled = !isEditMode,
+                ),
+            ) {
                 MonthLabels(months, maxWeek)
                 HeatmapGrid(
                     year = year,
@@ -73,8 +78,9 @@ fun ContributionCalendar(
                     cellsByPosition = cellsByPosition,
                     contributions = contributions,
                     selectedValue = selectedValue,
+                    emptyColor = MiuixTheme.colorScheme.surfaceVariant,
+                    isEditMode = isEditMode,
                     onCellsApplied = onCellsApplied,
-                    emptyColor = colorScheme.surfaceVariant,
                 )
             }
         }
@@ -125,13 +131,14 @@ private fun HeatmapGrid(
     contributions: ContributionMap,
     selectedValue: Int,
     emptyColor: Color,
+    isEditMode: Boolean,
     onCellsApplied: (Map<String, Int>) -> Unit,
 ) {
     val density = LocalDensity.current
     val cellStep = cellSize + cellGap
     val cellStepPx = with(density) { cellStep.toPx() }
     val cellSizePx = with(density) { cellSize.toPx() }
-    val cornerRadiusPx = with(density) { 3.dp.toPx() }
+    val cornerRadiusPx = with(density) { 4.dp.toPx() }
     val cellColors = remember(contributions, emptyColor, cellsByPosition) {
         buildMap {
             cellsByPosition.forEach { (position, day) ->
@@ -140,41 +147,28 @@ private fun HeatmapGrid(
         }
     }
 
-    Canvas(
-        modifier = Modifier
-            .width(cellStep * (maxWeek + 1))
-            .height(cellStep * 7)
-            .clipToBounds()
-            .semantics {
-                contentDescription = "贡献日历。轻触修改单个日期，长按后拖动可连续绘制，左右滑动可浏览全年"
-            }
+    val gestureModifier = if (isEditMode) {
+        Modifier
             .pointerInput(year, selectedValue, cellsByPosition) {
-                fun dateAt(offset: Offset): String? {
-                    if (offset.x < 0f || offset.y < 0f) return null
-                    val week = (offset.x / cellStepPx).toInt()
-                    val weekday = (offset.y / cellStepPx).toInt()
-                    if (week !in 0..maxWeek || weekday !in 0..6) return null
-
-                    val localX = offset.x - week * cellStepPx
-                    val localY = offset.y - weekday * cellStepPx
-                    if (localX > cellSizePx || localY > cellSizePx) return null
-
-                    val day = cellsByPosition[week to weekday] ?: return null
-                    return if (day.date.year == year) ContributionDomain.formatDate(day.date) else null
-                }
-
                 detectTapGestures { offset ->
-                    dateAt(offset)?.let { date ->
+                    dateAt(
+                        offset = offset,
+                        cellStepPx = cellStepPx,
+                        cellSizePx = cellSizePx,
+                        maxWeek = maxWeek,
+                        cellsByPosition = cellsByPosition,
+                        year = year,
+                    )?.let { date ->
                         onCellsApplied(mapOf(date to selectedValue))
                     }
                 }
             }
             .pointerInput(year, selectedValue, cellsByPosition) {
                 val touchedCells = linkedMapOf<String, Int>()
-                var lastPosition: Offset? = null
+                var previousPosition: Offset? = null
 
-                fun recordTouch(offset: Offset) {
-                    dateAtForGesture(
+                fun recordCell(offset: Offset) {
+                    dateAt(
                         offset = offset,
                         cellStepPx = cellStepPx,
                         cellSizePx = cellSizePx,
@@ -188,45 +182,57 @@ private fun HeatmapGrid(
 
                 fun recordPath(from: Offset, to: Offset) {
                     val distance = (to - from).getDistance()
-                    val steps = ceil(distance / (cellStepPx / 2f)).toInt().coerceAtLeast(1)
-                    repeat(steps) { step ->
-                        val fraction = (step + 1).toFloat() / steps
-                        recordTouch(from + (to - from) * fraction)
+                    val stepCount = ceil(distance / (cellStepPx / 2f)).toInt().coerceAtLeast(1)
+                    repeat(stepCount) { index ->
+                        val fraction = (index + 1).toFloat() / stepCount
+                        recordCell(from + (to - from) * fraction)
                     }
                 }
 
-                fun publishTouchedCells() {
+                fun applyTouchedCells() {
                     if (touchedCells.isNotEmpty()) {
                         onCellsApplied(touchedCells.toMap())
                         touchedCells.clear()
                     }
                 }
 
-                detectDragGesturesAfterLongPress(
+                detectDragGestures(
                     onDragStart = { offset ->
-                        lastPosition = offset
-                        recordTouch(offset)
+                        previousPosition = offset
+                        recordCell(offset)
                     },
                     onDrag = { change, _ ->
-                        val previousPosition = lastPosition
-                        if (previousPosition != null) {
-                            recordPath(previousPosition, change.position)
-                        } else {
-                            recordTouch(change.position)
-                        }
-                        lastPosition = change.position
+                        previousPosition?.let { from -> recordPath(from, change.position) } ?: recordCell(change.position)
+                        previousPosition = change.position
                         change.consume()
                     },
                     onDragEnd = {
-                        publishTouchedCells()
-                        lastPosition = null
+                        applyTouchedCells()
+                        previousPosition = null
                     },
                     onDragCancel = {
-                        publishTouchedCells()
-                        lastPosition = null
+                        applyTouchedCells()
+                        previousPosition = null
                     },
                 )
-            },
+            }
+    } else {
+        Modifier
+    }
+
+    Canvas(
+        modifier = Modifier
+            .width(cellStep * (maxWeek + 1))
+            .height(cellStep * 7)
+            .clipToBounds()
+            .semantics {
+                contentDescription = if (isEditMode) {
+                    "编辑模式。轻触修改单格，直接拖动可连续绘制"
+                } else {
+                    "浏览模式。左右滑动可浏览全年日期"
+                }
+            }
+            .then(gestureModifier),
     ) {
         for (week in 0..maxWeek) {
             for (weekday in 0..6) {
@@ -242,7 +248,7 @@ private fun HeatmapGrid(
     }
 }
 
-private fun dateAtForGesture(
+private fun dateAt(
     offset: Offset,
     cellStepPx: Float,
     cellSizePx: Float,
@@ -251,6 +257,7 @@ private fun dateAtForGesture(
     year: Int,
 ): String? {
     if (offset.x < 0f || offset.y < 0f) return null
+
     val week = (offset.x / cellStepPx).toInt()
     val weekday = (offset.y / cellStepPx).toInt()
     if (week !in 0..maxWeek || weekday !in 0..6) return null
@@ -276,7 +283,7 @@ private fun CalendarLegend(modifier: Modifier = Modifier) {
             Canvas(Modifier.width(cellSize).height(cellSize)) {
                 drawRoundRect(
                     color = contributionColor(value, emptyColor),
-                    cornerRadius = CornerRadius(3.dp.toPx(), 3.dp.toPx()),
+                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx()),
                 )
             }
         }
