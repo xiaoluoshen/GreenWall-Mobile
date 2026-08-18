@@ -21,6 +21,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.xiaoluoshen.greenwall.mobile.domain.ContributionMap
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -42,7 +44,10 @@ fun SettingsScreen(
     onPublish: (String, String, Boolean, ContributionMap) -> Unit,
     onConsumeMessage: () -> Unit,
 ) {
-    var repositoryName by remember { mutableStateOf("greenwall-contributions") }
+    val defaultRepositoryName = remember {
+        "greenwall-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"))}"
+    }
+    var repositoryName by remember { mutableStateOf(defaultRepositoryName) }
     var description by remember { mutableStateOf("Generated with GreenWall") }
     var isPrivate by remember { mutableStateOf(true) }
 
@@ -172,6 +177,11 @@ fun SettingsScreen(
                     style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
+                Text(
+                    text = "经典令牌需要 repo 权限。细粒度令牌需要 Administration 写入权限和 Contents 写入权限",
+                    style = MiuixTheme.textStyles.footnote1,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                )
                 TextField(
                     value = repositoryName,
                     onValueChange = { repositoryName = it },
@@ -212,12 +222,15 @@ fun SettingsScreen(
                     colors = ButtonDefaults.textButtonColorsPrimary(),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                BusyIndicator(isBusy = state.isBusy, label = "正在同步贡献记录")
+                BusyIndicator(
+                    isBusy = state.isBusy,
+                    label = if (state.syncProgress == null) "正在创建仓库" else "正在同步贡献记录",
+                )
             }
         }
 
         Text(
-            text = "GreenWall Mobile 2.6.0 · Kotlin + Jetpack Compose + MIUIX",
+            text = "GreenWall Mobile 2.6.1 · Kotlin + Jetpack Compose + MIUIX",
             style = MiuixTheme.textStyles.footnote1,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )

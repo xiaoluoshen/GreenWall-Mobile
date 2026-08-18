@@ -21,8 +21,8 @@ android {
         applicationId = "com.xiaoluoshen.greenwall.mobile"
         minSdk = 24
         targetSdk = 36
-        versionCode = 8
-        versionName = "2.6.0"
+        versionCode = 9
+        versionName = "2.6.1"
         ndk {
             abiFilters += setOf("arm64-v8a")
         }

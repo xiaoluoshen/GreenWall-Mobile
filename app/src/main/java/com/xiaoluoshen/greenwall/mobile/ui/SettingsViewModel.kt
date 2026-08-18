@@ -90,9 +90,13 @@ class SettingsViewModel(
             _state.value = _state.value.copy(message = "请输入仓库名称")
             return
         }
+        if (contributions.values.none { it > 0 }) {
+            _state.value = _state.value.copy(message = "请先在画布中绘制至少一个贡献格")
+            return
+        }
 
         viewModelScope.launch {
-            _state.value = _state.value.copy(isBusy = true, message = null, syncProgress = 0 to 0)
+            _state.value = _state.value.copy(isBusy = true, message = null, syncProgress = null)
             val repositoryResult = githubService.createRepository(
                 token = session.token,
                 name = repository,
@@ -104,17 +108,23 @@ class SettingsViewModel(
                 return@launch
             }
 
+            _state.value = _state.value.copy(syncProgress = 0 to contributions.values.sum())
             val publishResult = githubService.publishContributions(
                 token = session.token,
                 owner = session.login,
-                repository = repository,
+                repository = repository.trim(),
                 contributions = contributions,
             ) { current, total ->
                 _state.value = _state.value.copy(syncProgress = current to total)
             }
+            val message = if (publishResult.success) {
+                "仓库已创建，贡献提交完成"
+            } else {
+                "仓库已创建，但贡献提交失败：${publishResult.message}"
+            }
             _state.value = _state.value.copy(
                 isBusy = false,
-                message = publishResult.message,
+                message = message,
                 syncProgress = null,
             )
         }
