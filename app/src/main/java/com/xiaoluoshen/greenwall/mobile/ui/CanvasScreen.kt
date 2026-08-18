@@ -43,8 +43,9 @@ fun CanvasScreen(
     onUndo: () -> Unit,
     onRedo: () -> Unit,
 ) {
-    val years = (0..9).map { Year.now().value - it }
-    var isEditMode by remember { mutableStateOf(false) }
+    val currentYear = Year.now().value
+    val minYear = currentYear - 9
+    var isEditMode by remember { mutableStateOf(true) }
 
     Column(
         modifier = Modifier
@@ -55,74 +56,89 @@ fun CanvasScreen(
         verticalArrangement = Arrangement.spacedBy(ContentSectionSpacing),
     ) {
         CanvasHeader()
+        CanvasStage(
+            state = state,
+            minYear = minYear,
+            currentYear = currentYear,
+            isEditMode = isEditMode,
+            onYearSelected = onYearSelected,
+            onCellsApplied = onCellsApplied,
+        )
+        CanvasDock(
+            state = state,
+            isEditMode = isEditMode,
+            onEditModeChanged = { isEditMode = it },
+            onEraserChanged = onEraserChanged,
+            onLevelSelected = onLevelSelected,
+            onFillAll = onFillAll,
+            onGenerateRandomActive = onGenerateRandomActive,
+            onReset = onReset,
+            onUndo = onUndo,
+            onRedo = onRedo,
+        )
+        Text(
+            text = "字符模板可在“字符”页面选择，GitHub 同步可在“设置”页面完成",
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            style = MiuixTheme.textStyles.footnote1,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+    }
+}
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("年份", style = MiuixTheme.textStyles.title3)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(ControlSpacing),
+@Composable
+private fun CanvasHeader() {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = "GreenWall 贡献画布",
+            style = MiuixTheme.textStyles.headline1,
+        )
+        Text(
+            text = "选择工具后直接在日历上绘制，笔触会实时跟随手指",
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            style = MiuixTheme.textStyles.body2,
+        )
+    }
+}
+
+@Composable
+private fun CanvasStage(
+    state: CanvasUiState,
+    minYear: Int,
+    currentYear: Int,
+    isEditMode: Boolean,
+    onYearSelected: (Int) -> Unit,
+    onCellsApplied: (Map<String, Int>) -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        insideMargin = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(ControlSpacing),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            StageBadge(
+                text = canvasStatusText(state, isEditMode),
+                modifier = Modifier.weight(1f),
+            )
+            StageBadge(
+                text = "${ContributionDomain.total(state.contributions)} 次",
+            )
+        }
+
+        if (state.isLoading) {
+            Text(
+                text = "正在加载贡献数据",
+                style = MiuixTheme.textStyles.body1,
+                modifier = Modifier.padding(vertical = 44.dp),
+            )
+        } else {
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
+                    .padding(top = 16.dp),
+                insideMargin = PaddingValues(horizontal = 12.dp, vertical = 14.dp),
             ) {
-                years.forEach { year ->
-                    SelectionButton(
-                        text = year.toString(),
-                        isSelected = state.year == year,
-                        onClick = { onYearSelected(year) },
-                    )
-                }
-            }
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-        ) {
-            Text("操作模式", style = MiuixTheme.textStyles.title3)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(ControlSpacing),
-                modifier = Modifier.padding(top = 8.dp),
-            ) {
-                SelectionButton(
-                    text = "浏览",
-                    isSelected = !isEditMode,
-                    onClick = { isEditMode = false },
-                )
-                SelectionButton(
-                    text = "编辑",
-                    isSelected = isEditMode,
-                    onClick = { isEditMode = true },
-                )
-            }
-            Text(
-                text = if (isEditMode) {
-                    "编辑模式：轻触单格，直接拖动连续绘制"
-                } else {
-                    "浏览模式：左右滑动可查看全年，再切换编辑"
-                },
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                style = MiuixTheme.textStyles.body2,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            insideMargin = PaddingValues(12.dp),
-        ) {
-            Text(
-                text = "${state.year} 年共 ${ContributionDomain.total(state.contributions)} 次贡献",
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                style = MiuixTheme.textStyles.body2,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-            if (state.isLoading) {
-                Text(
-                    text = "正在加载贡献数据",
-                    style = MiuixTheme.textStyles.body1,
-                    modifier = Modifier.padding(vertical = 32.dp),
-                )
-            } else {
                 ContributionCalendar(
                     year = state.year,
                     contributions = state.contributions,
@@ -133,53 +149,65 @@ fun CanvasScreen(
             }
         }
 
-        CanvasControls(
-            state = state,
-            onEraserChanged = onEraserChanged,
-            onLevelSelected = onLevelSelected,
-            onFillAll = onFillAll,
-            onGenerateRandomActive = onGenerateRandomActive,
-            onReset = onReset,
-            onUndo = onUndo,
-            onRedo = onRedo,
-        )
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-        ) {
-            Text(
-                text = "GitHub 同步",
-                style = MiuixTheme.textStyles.title3,
-            )
-            Text(
-                text = "完成绘制后，可前往设置页登录并生成贡献提交",
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                style = MiuixTheme.textStyles.body2,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun CanvasHeader() {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = "画布",
-            style = MiuixTheme.textStyles.headline1,
-        )
-        Text(
-            text = "先左右滑动浏览日期，再切换编辑模式进行绘制",
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-            style = MiuixTheme.textStyles.body2,
+        YearSwitcher(
+            year = state.year,
+            minYear = minYear,
+            currentYear = currentYear,
+            onYearSelected = onYearSelected,
+            modifier = Modifier.padding(top = 16.dp),
         )
     }
 }
 
 @Composable
-private fun CanvasControls(
+private fun StageBadge(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+        style = MiuixTheme.textStyles.body2,
+        maxLines = 1,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun YearSwitcher(
+    year: Int,
+    minYear: Int,
+    currentYear: Int,
+    onYearSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(ControlSpacing),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        TextButton(
+            text = "‹",
+            onClick = { onYearSelected(year - 1) },
+            enabled = year > minYear,
+        )
+        Text(
+            text = "$year 年",
+            style = MiuixTheme.textStyles.title2,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(
+            text = "›",
+            onClick = { onYearSelected(year + 1) },
+            enabled = year < currentYear,
+        )
+    }
+}
+
+@Composable
+private fun CanvasDock(
     state: CanvasUiState,
+    isEditMode: Boolean,
+    onEditModeChanged: (Boolean) -> Unit,
     onEraserChanged: (Boolean) -> Unit,
     onLevelSelected: (ContributionLevel) -> Unit,
     onFillAll: () -> Unit,
@@ -190,42 +218,54 @@ private fun CanvasControls(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        insideMargin = PaddingValues(16.dp),
+        insideMargin = PaddingValues(12.dp),
     ) {
-        Text("绘制工具", style = MiuixTheme.textStyles.title2)
-        Text(
-            text = "切换到编辑模式后可直接拖动，整次绘制会合并为一次操作",
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-            style = MiuixTheme.textStyles.body2,
-            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(ControlSpacing)) {
-            SelectionButton(
+        Text("编辑工具", style = MiuixTheme.textStyles.title2)
+        ToolRow {
+            DockToolButton(
                 text = "画笔",
                 isSelected = !state.isEraserActive,
                 onClick = { onEraserChanged(false) },
             )
-            SelectionButton(
+            DockToolButton(
                 text = "橡皮擦",
                 isSelected = state.isEraserActive,
                 onClick = { onEraserChanged(true) },
+            )
+            DockToolButton(
+                text = if (isEditMode) "绘制中" else "浏览",
+                isSelected = isEditMode,
+                onClick = { onEditModeChanged(!isEditMode) },
+            )
+            DockToolButton(
+                text = "撤销",
+                isSelected = false,
+                enabled = state.canUndo,
+                onClick = onUndo,
+            )
+            DockToolButton(
+                text = "重做",
+                isSelected = false,
+                enabled = state.canRedo,
+                onClick = onRedo,
             )
         }
 
         if (!state.isEraserActive) {
             Text(
-                text = "贡献强度",
-                style = MiuixTheme.textStyles.title3,
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                text = "画笔强度",
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                style = MiuixTheme.textStyles.body2,
+                modifier = Modifier.padding(top = 14.dp, bottom = 8.dp),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(ControlSpacing)) {
+            ToolRow {
                 listOf(
                     ContributionLevel.Low,
                     ContributionLevel.Medium,
                     ContributionLevel.High,
                     ContributionLevel.Maximum,
                 ).forEach { level ->
-                    SelectionButton(
+                    DockToolButton(
                         text = level.value.toString(),
                         isSelected = state.selectedLevel == level,
                         onClick = { onLevelSelected(level) },
@@ -234,63 +274,62 @@ private fun CanvasControls(
             }
         }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(ControlSpacing),
-            modifier = Modifier.padding(top = 16.dp),
-        ) {
-            TextButton(
-                text = "全绿",
-                onClick = onFillAll,
-                modifier = Modifier.weight(1f),
-            )
-            TextButton(
-                text = "随机活跃",
-                onClick = onGenerateRandomActive,
-                modifier = Modifier.weight(1f),
-            )
-        }
         Text(
-            text = "随机活跃会生成更接近日常节奏的贡献分布",
+            text = "批量操作",
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-            style = MiuixTheme.textStyles.footnote1,
-            modifier = Modifier.padding(top = 8.dp),
+            style = MiuixTheme.textStyles.body2,
+            modifier = Modifier.padding(top = 14.dp, bottom = 8.dp),
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(ControlSpacing),
-            modifier = Modifier.padding(top = 8.dp),
-        ) {
-            TextButton(
-                text = "重置",
-                onClick = onReset,
-                modifier = Modifier.weight(1f),
+        ToolRow {
+            DockToolButton(
+                text = "全绿",
+                isSelected = false,
+                onClick = onFillAll,
             )
-            TextButton(
-                text = "撤销",
-                onClick = onUndo,
-                enabled = state.canUndo,
-                modifier = Modifier.weight(1f),
+            DockToolButton(
+                text = "随机活跃",
+                isSelected = false,
+                onClick = onGenerateRandomActive,
+            )
+            DockToolButton(
+                text = "重置",
+                isSelected = false,
+                onClick = onReset,
             )
         }
-        TextButton(
-            text = "重做",
-            onClick = onRedo,
-            enabled = state.canRedo,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = ControlSpacing),
-        )
     }
 }
 
 @Composable
-private fun SelectionButton(
+private fun ToolRow(content: @Composable () -> Unit) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(ControlSpacing),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp)
+            .horizontalScroll(rememberScrollState()),
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun DockToolButton(
     text: String,
     isSelected: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
     TextButton(
         text = text,
         onClick = onClick,
+        enabled = enabled,
         colors = if (isSelected) ButtonDefaults.textButtonColorsPrimary() else ButtonDefaults.textButtonColors(),
     )
+}
+
+private fun canvasStatusText(state: CanvasUiState, isEditMode: Boolean): String = when {
+    !isEditMode -> "浏览全年日期"
+    state.isEraserActive -> "橡皮擦 · 实时编辑"
+    else -> "画笔 ${state.selectedLevel.value} · 实时编辑"
 }
